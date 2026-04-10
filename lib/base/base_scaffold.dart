@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 
 import '../theme/app_color.dart';
 import '../theme/app_font.dart';
-import '../widgets/app_button.dart';
 import 'base_controller.dart';
 
 class BaseScaffold<T extends BaseController> extends StatelessWidget {
@@ -162,37 +161,37 @@ class BaseScaffold<T extends BaseController> extends StatelessWidget {
       actions: [
         if (actionButtons != null) ...actionButtons!,
         if (showDeleteButton)
-          Padding(
-            padding: const EdgeInsets.only(right: 16, bottom: 0),
-            child: AppButton(
-              height: 28,
-              width: 76,
-              backgroundColor: AppColor.TEXT_WARNING,
-              onPressed: onDelete,
-              // x),
-              title: 'キャンセル',
-              textStyle: AppFont.textSize18.copyWith(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-              cornerRadius: 6,
-            ),
-          ),
-        if (showRightButton)
-          Padding(
-            padding: const EdgeInsets.only(right: 16, bottom: 0),
-            child: AppButton(
-              height: 28,
-              width: 76,
-              backgroundColor: AppColor.BACKGROUND,
-              onPressed: onRightButton,
-              // x),
-              title: rightButtonTitle ?? '',
-              textStyle: AppFont.textSize14.copyWith(
-                  color: AppColor.TEXT_GREY_2, fontWeight: FontWeight.w500),
-              cornerRadius: 6,
-            ),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.only(right: 16, bottom: 0),
+          //   child: AppButton(
+          //     height: 28,
+          //     width: 76,
+          //     backgroundColor: AppColor.TEXT_WARNING,
+          //     onPressed: onDelete,
+          //     // x),
+          //     title: 'キャンセル',
+          //     textStyle: AppFont.textSize18.copyWith(
+          //       color: Colors.white,
+          //       fontSize: 12,
+          //     ),
+          //     cornerRadius: 6,
+          //   ),
+          // ),
+        // if (showRightButton)
+        //   Padding(
+        //     padding: const EdgeInsets.only(right: 16, bottom: 0),
+        //     child: AppButton(
+        //       height: 28,
+        //       width: 76,
+        //       backgroundColor: AppColor.BACKGROUND,
+        //       onPressed: onRightButton,
+        //       // x),
+        //       title: rightButtonTitle ?? '',
+        //       textStyle: AppFont.textSize14.copyWith(
+        //           color: AppColor.TEXT_GREY_2, fontWeight: FontWeight.w500),
+        //       cornerRadius: 6,
+        //     ),
+        //   ),
         if (showBellIcon)
           Padding(
             padding: const EdgeInsets.only(right: 13, bottom: 8),

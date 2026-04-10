@@ -1,7 +1,6 @@
 import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:untitled/modules/authen/sign_in_email_scene.dart';
 import 'package:untitled/modules/authen/sign_up_scene.dart';
-import 'package:untitled/modules/createNewItem/screate_new_note_scene.dart';
 import 'package:untitled/modules/mainScene/main_scene.dart';
 import 'package:untitled/modules/notePen/note_pen_scene.dart';
 import 'package:untitled/modules/profile/profile_scene.dart';
@@ -29,11 +28,11 @@ class Pages {
       page: () => const MainScene(),
     ),
 
-    GetPage(
-      name: Routes.createNote,
-      binding: CreateNewNoteBinding(),
-      page: () => CreateNewNote(),
-    ),
+    // GetPage(
+    //   name: Routes.createNote,
+    //   binding: CreateNewNoteBinding(),
+    //   page: () => CreateNewNote(),
+    // ),
 
     GetPage(
       name: Routes.notePen,
@@ -47,11 +46,11 @@ class Pages {
       page: () => RecordPlayerScene(),
     ),
 
-    GetPage(
-      name: Routes.topScreen,
-      binding: TopBinding(),
-      page: () => TopScene(),
-    ),
+    // GetPage(
+    //   name: Routes.topScreen,
+    //   binding: TopBinding(),
+    //   page: () => TopScene(),
+    // ),
 
     GetPage(
       name: Routes.profile,

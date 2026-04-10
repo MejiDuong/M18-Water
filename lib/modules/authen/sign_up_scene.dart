@@ -5,7 +5,6 @@ import 'package:untitled/modules/authen/sign_up_controller.dart';
 import 'package:untitled/theme/app_color.dart';
 import 'package:untitled/ultils/app_validate.dart';
 import 'package:untitled/ultils/constant.dart';
-import 'package:untitled/widgets/app_button.dart';
 import 'package:untitled/widgets/text_field/custom_form_field.dart';
 import 'package:untitled/widgets/text_field/custom_password_form_field.dart';
 import '../../theme/app_font.dart';
@@ -121,7 +120,6 @@ class SignUpEmailScene extends GetView<SignUpController> {
                 //     title: 'Đăng ký',
                 //   ),
                 // )),
-                _buildSignUpButton(),
               ],
             ),
           ),
@@ -130,25 +128,4 @@ class SignUpEmailScene extends GetView<SignUpController> {
     );
   }
 
-  Widget _buildSignUpButton() {
-    // return Obx(() {
-    return AppButton(
-      height: 48,
-      title: 'Register',
-      // isEnabled: (controller.email.value.isNotEmpty &&
-      //     controller.password.value.isNotEmpty &&
-      //     controller.confirmPassword.value.isNotEmpty &&
-      //     controller.password.value == controller.confirmPassword.value),
-      backgroundColor: Colors.indigoAccent,
-      // Màu nền
-      textStyle: AppFont.textSize18.copyWith(
-        color: Colors.white,
-      ),
-      cornerRadius: 14,
-      onPressed: () {
-        controller.register();
-      },
-    );
-    // });
-  }
 }

@@ -276,9 +276,8 @@ class MainScene extends StatelessWidget {
 
   Widget _buildDrinkLogs(BuildContext context, WaterController controller) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    const double totalItemWidth = 96.0; // 90 width + 3*2 padding
-    final double paddingHorizontal = (screenWidth / 2) - 48;
-
+    const double totalItemWidth = 94.0;
+    final double paddingHorizontal = (screenWidth / 2) - (totalItemWidth / 2);
     return Obx(() {
       if (controller.dailyLogs.isEmpty) {
         return Padding(
@@ -294,8 +293,7 @@ class MainScene extends StatelessWidget {
         );
       }
       return SizedBox(
-        height:
-            180, // Tăng chiều cao để chứa cả Menu và Cốc chung một khối Column
+        height: 160, // Tăng chiều cao để chứa cả Menu và Cốc chung một khối Column
         child: ListView.builder(
           controller: controller.scrollController,
           scrollDirection: Axis.horizontal,
@@ -310,158 +308,117 @@ class MainScene extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // Menu (Xóa & +Drink) - Luôn nằm trên cốc trong cùng Column
-                    SizedBox(
-                      height: 50,
-                      child: AnimatedOpacity(
-                        duration: const Duration(milliseconds: 250),
-                        opacity: isSelected ? 1.0 : 0.0,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          // Dùng IgnorePointer để khi ẩn đi (opacity 0) thì không bấm nhầm được
-                          children: isSelected
-                              ? [
-                                  // NÚT XÓA
-                                  Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      onTap: () => controller.removeLog(index),
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Ink(
-                                        // Dùng Ink thay cho Container
-                                        width: 48,
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          color: Colors.black,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.delete_outline,
-                                          color: Colors.white,
-                                          size: 24,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // NÚT DRINK
-                                  Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      onTap: () {
-                                        controller.addWater(log.amount);
-                                        controller.selectedLogIndex.value = -1;
-                                      },
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Ink(
-                                        // Dùng Ink để hiệu ứng Ripple hiện trên nền xanh
-                                        height: 48,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF4DB64D),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(
-                                              Icons.add,
-                                              color: Colors.white,
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              'Drink',
-                                              style: GoogleFonts.workSans(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            const Icon(
-                                              Icons.chevron_right,
-                                              color: Colors.white,
-                                              size: 20,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ]
-                              : [], // Khi không chọn thì mảng rỗng
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    InkWell(
-                      onTap: () => controller.selectLog(index, screenWidth),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            width: 90,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFB2EBF2),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected
-                                    ? const Color(0xFF00CDE0)
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                    // 1. KHỐI MENU (Đẩy từ dưới lên)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      height: isSelected ? 60 : 0, // Mở ra 60px khi chọn
+                      alignment: Alignment.bottomCenter,
+                      child: SingleChildScrollView( // Chống báo lỗi tràn viền khi đang mở
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: isSelected ? 1.0 : 0.0,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                SvgPicture.asset(
-                                  'assets/vectors/cup.svg',
-                                  width: 28,
-                                  height: 40,
+                                // NÚT XÓA (Giờ đã bấm được 100% diện tích)
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () => controller.removeLog(index),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Ink(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
+                                    ),
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '+${log.amount.toInt()} ml',
-                                  style: GoogleFonts.workSans(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: const Color(0xFF0A0C11),
+                                const SizedBox(width: 8),
+                                // NÚT DRINK
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      controller.addWater(log.amount);
+                                      controller.selectedLogIndex.value = -1;
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Ink(
+                                      height: 48,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF4DB64D),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.add, color: Colors.white, size: 20),
+                                          const SizedBox(width: 4),
+                                          Text('Drink', style: GoogleFonts.workSans(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                          const SizedBox(width: 4),
+                                          const Icon(Icons.chevron_right, color: Colors.white, size: 20),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          if (isSelected)
-                            Positioned(
-                              top: -8,
-                              right: -8,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFFC107),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Text(
-                                  '2',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                        ),
+                      ),
+                    ),
+
+                    // 2. KHỐI CỐC NƯỚC (Nở chiều ngang để ôm trọn Menu)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOutBack, // Có độ nảy nhẹ đẩy các cốc khác rất đẹp
+                      width: isSelected ? 150 : 90, // TỪ KHÓA ĐÂY: Nở từ 90 ra 150
+                      child: Center(
+                        // Center giúp Cốc vẫn đứng ngay ngắn ở giữa khi khung nở ra
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => controller.selectLog(index, screenWidth),
+                            borderRadius: BorderRadius.circular(16),
+                            child: Ink( // Bọc Ink để có hiệu ứng sóng nước cho cả cái cốc
+                              width: 90, // Cốc vật lý vẫn giữ nguyên độ to
+                              height: 100,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFB2EBF2),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected ? const Color(0xFF00CDE0) : Colors.transparent,
+                                  width: 2,
                                 ),
                               ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SvgPicture.asset('assets/vectors/cup.svg', width: 28, height: 40),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '+${log.amount.toInt()} ml',
+                                    style: GoogleFonts.workSans(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF0A0C11),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                        ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -479,13 +436,13 @@ class MainScene extends StatelessWidget {
       onTap: () => _showDrinkOptions(context, controller),
       borderRadius: BorderRadius.circular(35),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(35),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black,
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -593,39 +550,56 @@ class MainScene extends StatelessWidget {
   }
 
   Widget _buildBottomNav() {
+    final MainController mainController = Get.find<MainController>();
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
       child: Container(
-        height: 85,
-        color: const Color(0xFF00ACC1),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+        // Thêm SafeArea (padding bottom) để không bị cấn thanh vuốt ngang của iPhone
+        padding: const EdgeInsets.only(bottom: 20, top: 8),
+        decoration: const BoxDecoration(
+            color: Color(0xFF00ACC1),
+            // Bo góc nhẹ thanh Nav cho mềm mại
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 10,
+                offset: Offset(0, -2),
+              )
+            ]
+        ),
+        // Phải có Obx ở đây để nó nghe ngóng sự thay đổi của currentTab
+        child: Obx(() => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _NavItem(
               svgPath: 'assets/vectors/waterdrops.svg',
               label: 'Today',
-              isSelected: true,
-              onTap: () {},
+              isSelected: mainController.currentTab.value == 0,
+              onTap: () => mainController.changeTab(0),
             ),
             _NavItem(
               svgPath: 'assets/vectors/ic_history.svg',
               label: 'History',
-              onTap: () {},
+              isSelected: mainController.currentTab.value == 1,
+              onTap: () => mainController.changeTab(1),
             ),
             _NavItem(
               svgPath: 'assets/vectors/ic_document.svg',
               label: 'Insights',
-              onTap: () {},
+              isSelected: mainController.currentTab.value == 2,
+              onTap: () => mainController.changeTab(2),
             ),
           ],
-        ),
+        )),
       ),
     );
   }
 }
 
+// NÂNG CẤP CLASS NAV ITEM: Thêm hiệu ứng chuyển đổi mượt mà
 class _NavItem extends StatelessWidget {
   final String svgPath;
   final String label;
@@ -643,30 +617,41 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      splashColor: Colors.white24,
+      highlightColor: Colors.transparent, // Tắt cái bóng xám xấu xí mặc định
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white.withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Icon
             SvgPicture.asset(
               svgPath,
               colorFilter: ColorFilter.mode(
                 isSelected ? Colors.white : Colors.white60,
                 BlendMode.srcIn,
               ),
-              width: 28,
-              height: 28,
+              width: 26,
+              height: 26,
             ),
             const SizedBox(height: 4),
-            Text(
-              label,
+            // Text có hiệu ứng đổi font mượt
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 250),
               style: GoogleFonts.workSans(
                 color: isSelected ? Colors.white : Colors.white60,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
+              child: Text(label),
             ),
           ],
         ),
