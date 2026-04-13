@@ -31,9 +31,45 @@ class WaterController extends GetxController {
   var nextReminderDay = "".obs;
   Timer? _timer;
 
+  // Navigation state
+  var currentTab = 0.obs;
+
   final ScrollController scrollController = ScrollController();
 
   double get percentage => (totalWater.value / goalWater.value);
+
+  // LOGIC BIỂU ĐỒ: Lấy dữ liệu lượng nước tích lũy theo từng giờ (0-24h)
+  List<double> get dayChartData {
+    List<double> hourlyIntake = List.filled(25, 0.0);
+    for (var log in dailyLogs) {
+      if (log.time.day == DateTime.now().day) {
+        hourlyIntake[log.time.hour] += log.amount;
+      }
+    }
+    // Tính lũy kế để đường biểu đồ luôn đi lên
+    List<double> cumulative = List.filled(25, 0.0);
+    double sum = 0;
+    for (int i = 0; i < 25; i++) {
+      sum += hourlyIntake[i];
+      cumulative[i] = sum;
+    }
+    return cumulative;
+  }
+
+  // Gộp cốc cho màn hình Today
+  List<Map<String, dynamic>> get groupedLogs {
+    final Map<double, int> counts = {};
+    final List<double> order = [];
+    for (var log in dailyLogs) {
+      if (counts.containsKey(log.amount)) {
+        counts[log.amount] = counts[log.amount]! + 1;
+      } else {
+        counts[log.amount] = 1;
+        order.add(log.amount);
+      }
+    }
+    return order.map((amount) => {'amount': amount, 'count': counts[amount]}).toList();
+  }
 
   @override
   void onInit() {
@@ -56,28 +92,16 @@ class WaterController extends GetxController {
       nextReminderDay.value = "";
       return;
     }
-
     final now = DateTime.now();
     DateTime scheduled = DateTime(now.year, now.month, now.day, reminderTime.value.hour, reminderTime.value.minute);
-    
-    // Nếu đã qua giờ hoặc đã đạt mục tiêu -> Tính cho ngày mai
     if (scheduled.isBefore(now) || percentage >= 1.0) {
-      if (percentage >= 1.0 && scheduled.isAfter(now)) {
-        scheduled = scheduled.add(const Duration(days: 1));
-      } else if (scheduled.isBefore(now)) {
-        scheduled = scheduled.add(const Duration(days: 1));
-      }
+      scheduled = scheduled.add(const Duration(days: 1));
       nextReminderDay.value = DateFormat('EEEE').format(scheduled);
     } else {
       nextReminderDay.value = "";
     }
-
     final difference = scheduled.difference(now);
-    final hours = difference.inHours;
-    final minutes = difference.inMinutes % 60;
-    
-    // Định dạng: (4h 32min left)
-    timeLeftString.value = "(${hours}h ${minutes}min left)";
+    timeLeftString.value = "(${difference.inHours}h${(difference.inMinutes % 60).toString().padLeft(2, '0')} min left)";
   }
 
   Future<void> checkNotificationPermission() async {
@@ -112,24 +136,16 @@ class WaterController extends GetxController {
   }
 
   void _updateNotification() {
-    _notificationService.scheduleDailyNotification(
-      reminderTime.value.hour,
-      reminderTime.value.minute,
-    );
+    _notificationService.scheduleDailyNotification(reminderTime.value.hour, reminderTime.value.minute);
   }
 
   void addWater(double amount) {
     totalWater.value += amount;
     dailyLogs.add(DrinkLog(amount: amount, time: DateTime.now()));
     updateTimeLeft();
-    
     Future.delayed(const Duration(milliseconds: 100), () {
       if (scrollController.hasClients) {
-        scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        scrollController.animateTo(scrollController.position.maxScrollExtent, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
       }
     });
   }
@@ -142,29 +158,30 @@ class WaterController extends GetxController {
       updateTimeLeft();
     }
   }
+
+  void removeGroupedLog(double amount) {
+    int index = dailyLogs.lastIndexWhere((log) => log.amount == amount);
+    if (index != -1) removeLog(index);
+  }
+
+  void updateWaterByPercentage(double p) {
+    totalWater.value = (goalWater.value * p).clamp(0.0, goalWater.value * 2);
+  }
   
   void selectLog(int index, double screenWidth) {
     if (selectedLogIndex.value == index) {
       selectedLogIndex.value = -1;
     } else {
       selectedLogIndex.value = index;
-      const double itemWidth = 96.0; 
-      final double targetOffset = index * itemWidth;
-
+      const double totalItemWidth = 102.0;
+      final double targetOffset = index * totalItemWidth;
       if (scrollController.hasClients) {
-        scrollController.animateTo(
-          targetOffset.clamp(0.0, scrollController.position.maxScrollExtent),
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOutCubic,
-        );
+        scrollController.animateTo(targetOffset.clamp(0.0, scrollController.position.maxScrollExtent), duration: const Duration(milliseconds: 500), curve: Curves.easeInOutCubic);
       }
     }
   }
 
-  @override
-  void onClose() {
-    _timer?.cancel();
-    scrollController.dispose();
-    super.onClose();
+  void changeTab(int index) {
+    currentTab.value = index;
   }
 }

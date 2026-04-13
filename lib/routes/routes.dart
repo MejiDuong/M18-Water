@@ -14,4 +14,6 @@ abstract class Routes {
   static const record = '/record';
   static const topScreen = '/top-screen';
   static const profile = '/profile';
+  static const history = '/history';
+  static const insight = '/insight';
 }

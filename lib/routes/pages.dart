@@ -1,11 +1,14 @@
 import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:untitled/modules/authen/sign_in_email_scene.dart';
 import 'package:untitled/modules/authen/sign_up_scene.dart';
+import 'package:untitled/modules/createNewItem/screate_new_note_scene.dart';
 import 'package:untitled/modules/mainScene/main_scene.dart';
 import 'package:untitled/modules/notePen/note_pen_scene.dart';
 import 'package:untitled/modules/profile/profile_scene.dart';
 import 'package:untitled/modules/record/record_player_scene.dart';
 import 'package:untitled/modules/top/top_scene.dart';
+import 'package:untitled/modules/history/history_screen.dart';
+import 'package:untitled/modules/insight/insight_screen.dart';
 import 'package:untitled/routes/routes.dart';
 
 class Pages {
@@ -28,11 +31,11 @@ class Pages {
       page: () => const MainScene(),
     ),
 
-    // GetPage(
-    //   name: Routes.createNote,
-    //   binding: CreateNewNoteBinding(),
-    //   page: () => CreateNewNote(),
-    // ),
+    GetPage(
+      name: Routes.createNote,
+      binding: CreateNewNoteBinding(),
+      page: () => CreateNewNote(),
+    ),
 
     GetPage(
       name: Routes.notePen,
@@ -46,16 +49,26 @@ class Pages {
       page: () => RecordPlayerScene(),
     ),
 
-    // GetPage(
-    //   name: Routes.topScreen,
-    //   binding: TopBinding(),
-    //   page: () => TopScene(),
-    // ),
+    GetPage(
+      name: Routes.topScreen,
+      binding: TopBinding(),
+      page: () => TopScene(),
+    ),
 
     GetPage(
       name: Routes.profile,
       binding: ProfileBinding(),
       page: () => ProfileScene(),
+    ),
+
+    GetPage(
+      name: Routes.history,
+      page: () => const HistoryScreen(),
+    ),
+
+    GetPage(
+      name: Routes.insight,
+      page: () => const InsightScreen(),
     ),
   ];
 }

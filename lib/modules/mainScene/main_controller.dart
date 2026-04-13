@@ -1,10 +1,20 @@
 import 'package:get/get.dart';
+import 'package:untitled/base/base_controller.dart';
 
-class MainController extends GetxController {
-  // Biến .obs để theo dõi người dùng đang ở tab nào (0: Today, 1: History, 2: Insights)
-  var currentTab = 0.obs;
+import '../../models/account.dart';
 
-  void changeTab(int index) {
-    currentTab.value = index;
-  }
-}
+class MainController extends BaseController {
+  RxString facebookAccount = ''.obs;
+  RxString userName = ''.obs;
+
+  RxList<Account> socialAccounts = <Account>[
+    Account(social: 'Facebook', name: 'hoanganh.fb', password: 'passFB123'),
+    Account(social: 'Instagram', name: 'hoanganh.ig', password: 'insta456'),
+    Account(social: 'Instagram', name: 'hoanganh.ig', password: 'insta456'),
+    Account(social: 'Instagram', name: 'hoanganh.ig', password: 'insta456'),
+    Account(social: 'Instagram', name: 'hoanganh.ig', password: 'insta456'),
+    Account(social: 'Instagram', name: 'hoanganh.ig', password: 'insta456'),
+    Account(social: 'Instagram', name: 'hoanganh.ig', password: 'insta456'),
+    Account(social: 'Instagram', name: 'hoanganh.ig', password: 'insta456'),
+    Account(social: 'Instagram', name: 'hoanganh.ig', password: 'insta456'),
+  ].obs;}
