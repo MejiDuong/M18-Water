@@ -125,8 +125,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildTopTabs() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 16),
+      // Tạo một đường gạch dưới mờ mờ chạy dọc toàn bộ 3 tab (Unselected state)
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: const Color(0xFF00CDE0).withOpacity(0.3), width: 1.0),
+        ),
+      ),
       child: Row(
         children: [
           _tabItem("DAY", 0),
@@ -141,28 +147,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
     bool isSelected = selectedTab == index;
     return Expanded(
       child: InkWell(
+        // THÊM 2 DÒNG NÀY ĐỂ TẮT BÓNG MỜ KHI BẤM
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+
         onTap: () => setState(() {
           selectedTab = index;
           focusedDate = DateTime.now();
           selectedDotIndex = null;
         }),
-        child: Column(
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.workSans(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.black : Colors.grey,
+        child: Container(
+          padding: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? const Color(0xFF00CDE0) : Colors.transparent,
+                width: 2.5,
               ),
             ),
-            const SizedBox(height: 4),
-            Container(
-              height: 2,
-              width: 40,
-              color: isSelected ? const Color(0xFF00CDE0) : Colors.transparent,
-            )
-          ],
+          ),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.workSans(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? const Color(0xFF0A0C11) : const Color(0xFF6B7280),
+            ),
+          ),
         ),
       ),
     );
@@ -632,7 +644,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildBottomNav(WaterController controller) {
     return Container(
       height: 85,
-      color: const Color(0xFF00ACC1),
+      color: const Color(0xFF00B9CA),
       child: Obx(
         () => Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,

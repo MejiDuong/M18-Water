@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../mainScene/water_controller.dart';
 import '../../routes/routes.dart';
+import 'insight_detail_screen.dart';
 
 class InsightScreen extends StatefulWidget {
   const InsightScreen({super.key});
@@ -18,62 +19,62 @@ class _InsightScreenState extends State<InsightScreen> {
   final List<Map<String, dynamic>> _categories = [
     {
       "name": "Water Drinking",
-      "color": const Color(0xFFE1F5E1), // Light Green
+      "color": const Color(0xFFD4F7CF), // Light Green
       "items": [
         "Avoid these water drinking mistakes",
         "Replacing beverages with water for health",
         "Best times to drink water",
-        "How much water should you drink?",
-        "Signs of dehydration",
-        "Hydration and exercise",
+        "Best times to drink water",
+        "Best times to drink water",
+        "Best times to drink water",
       ]
     },
     {
       "name": "Beauty & Skincare",
-      "color": const Color(0xFFFFDADA), // Light Red/Pink
+      "color": const Color(0xFFF9B3B3), // Light Red/Pink
       "items": [
         "How Drinking Water Improves Skin Health",
         "Hydration Plan for Smooth Skin",
         "Juices for Radiant and Glowing Skin",
         "Drink Water on an Empty Stomach?",
-        "Anti-aging benefits of water",
-        "Detox water recipes",
+        "Best times to drink water",
+        "Best times to drink water",
       ]
     },
     {
       "name": "Self-care",
-      "color": const Color(0xFFFFF4CC), // Light Yellow
+      "color": const Color(0xFFFEE59A), // Light Yellow
       "items": [
         "Avoid those water drinking mistakes",
         "Replacing beverages with water for health",
         "Best times to drink water",
-        "Mental clarity and hydration",
-        "Morning routines for wellness",
-        "Stress relief through water",
+        "Best times to drink water",
+        "Best times to drink water",
+        "Best times to drink water",
       ]
     },
     {
       "name": "Health Lifestyle",
-      "color": const Color(0xFFFFE1F5), // Light Purple/Pink
+      "color": const Color(0xFFFFCCFA), // Light Purple/Pink
       "items": [
         "Avoid those water drinking mistakes",
         "Replacing beverages with water for health",
         "Best times to drink water",
-        "Weight loss and water intake",
-        "Boosting metabolism with water",
-        "Improving sleep with hydration",
+        "Best times to drink water",
+        "Best times to drink water",
+        "Best times to drink water",
       ]
     },
     {
       "name": "Cardiovascular Health",
-      "color": const Color(0xFFE1F0FF), // Light Blue
+      "color": const Color(0xFFBCDFFA), // Light Blue
       "items": [
         "Avoid those water drinking mistakes",
         "Replacing beverages with water for health",
         "Best times to drink water",
-        "Heart health and hydration",
-        "Lowering blood pressure naturally",
-        "Cholesterol and water intake",
+        "Best times to drink water",
+        "Best times to drink water",
+        "Best times to drink water",
       ]
     },
   ];
@@ -103,7 +104,7 @@ class _InsightScreenState extends State<InsightScreen> {
               onTap: () {},
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Color(0xFFF4F4F6),
                   shape: BoxShape.circle,
                 ),
@@ -130,44 +131,58 @@ class _InsightScreenState extends State<InsightScreen> {
   }
 
   Widget _buildCategoryTabs() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: List.generate(_categories.length, (index) {
-          final isSelected = _selectedCategoryIndex == index;
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedCategoryIndex = index;
-              });
-            },
-            child: Container(
-              margin: const EdgeInsets.only(right: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+    return Stack(
+      children: [
+        // 1. Đường kẻ mờ chạy xuyên suốt màn hình (Nằm bên dưới)
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 1,
+            color: const Color(0xFF00CDE0).withOpacity(0.3),
+          ),
+        ),
+
+        // 2. Danh sách các Tab cuộn ngang (Nằm bên trên)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: List.generate(_categories.length, (index) {
+              final isSelected = _selectedCategoryIndex == index;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedCategoryIndex = index;
+                  });
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 24),
+                  padding: const EdgeInsets.only(top: 8, bottom: 12), // Tạo khoảng trống đẩy chữ lên
+                  decoration: BoxDecoration(
+                    // Kẻ đè đường Cyan đậm nếu Tab được chọn
+                    border: Border(
+                      bottom: BorderSide(
+                        color: isSelected ? const Color(0xFF00CDE0) : Colors.transparent,
+                        width: 2.5,
+                      ),
+                    ),
+                  ),
+                  child: Text(
                     _categories[index]["name"],
                     style: GoogleFonts.workSans(
                       fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? Colors.black : Colors.grey,
+                      fontWeight: FontWeight.bold, // Chữ in đậm toàn bộ
+                      color: isSelected ? const Color(0xFF0A0C11) : const Color(0xFF6B7280),
                     ),
                   ),
-                  if (isSelected)
-                    Container(
-                      margin: const EdgeInsets.only(top: 4),
-                      height: 2,
-                      width: 24,
-                      color: const Color(0xFF00ACC1),
-                    )
-                ],
-              ),
-            ),
-          );
-        }),
-      ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
     );
   }
 
@@ -186,29 +201,41 @@ class _InsightScreenState extends State<InsightScreen> {
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(16),
+        return GestureDetector(
+          onTap: () {
+            // SỬ DỤNG Get.toNamed VÀ GỬI DATA VÀO ARGUMENTS
+            Get.toNamed(
+              Routes.insightDetail,
+              arguments: {
+                'title': items[index],
+                'bgColor': color,
+              },
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              items[index],
-              style: GoogleFonts.workSans(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF5B616D),
+              const SizedBox(height: 12),
+              Text(
+                items[index],
+                style: GoogleFonts.workSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF5B616D),
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -217,7 +244,7 @@ class _InsightScreenState extends State<InsightScreen> {
   Widget _buildBottomNav(WaterController controller) {
     return Container(
       height: 85,
-      color: const Color(0xFF00ACC1),
+      color: const Color(0xFF00B9CA),
       child: Obx(
         () => Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,

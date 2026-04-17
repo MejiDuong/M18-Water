@@ -642,7 +642,7 @@ class MainScene extends StatelessWidget {
       right: 0,
       child: Container(
         height: 85,
-        color: const Color(0xFF00ACC1),
+        color: const Color(0xFF00B9CA),
         child: Obx(
           () => Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,

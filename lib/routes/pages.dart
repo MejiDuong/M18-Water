@@ -1,3 +1,5 @@
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:untitled/modules/authen/sign_in_email_scene.dart';
 import 'package:untitled/modules/authen/sign_up_scene.dart';
@@ -9,6 +11,7 @@ import 'package:untitled/modules/record/record_player_scene.dart';
 import 'package:untitled/modules/top/top_scene.dart';
 import 'package:untitled/modules/history/history_screen.dart';
 import 'package:untitled/modules/insight/insight_screen.dart';
+import 'package:untitled/modules/insight/insight_detail_screen.dart';
 import 'package:untitled/routes/routes.dart';
 
 class Pages {
@@ -69,6 +72,14 @@ class Pages {
     GetPage(
       name: Routes.insight,
       page: () => const InsightScreen(),
+    ),
+
+    GetPage(
+      name: Routes.insightDetail,
+      page: () => InsightDetailScreen(
+        title: Get.arguments['title'],
+        bgColor: Get.arguments['bgColor'],
+      ),
     ),
   ];
 }
