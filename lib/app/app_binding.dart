@@ -6,6 +6,6 @@ class AppBinding extends Bindings {
   @override
   void dependencies() {
     Get.put(WaterController(), permanent: true);
-    Get.lazyPut(() => MainController());
+    // Get.lazyPut(() => MainController());
   }
 }

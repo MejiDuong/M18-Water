@@ -207,7 +207,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             icon: Icon(
               Icons.chevron_right,
               // Đổi màu xám nhạt nếu nút bị khóa
-              color: _canGoNext() ? Colors.black : Colors.grey.withOpacity(0.3),
+              color: _canGoNext() ? Colors.black : Colors.grey,
             ),
           ),
         ],
@@ -318,7 +318,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
         double x = leftMargin + (sortedLogs[i].time.hour + sortedLogs[i].time.minute / 60.0) * xStep;
         double y = h - (currentSum / maxVal * h);
 
-        // Tính khoảng cách chuẩn Pythagore
         double distance = math.sqrt(math.pow(localPosition.dx - x, 2) + math.pow(localPosition.dy - y, 2));
         if (distance < minDistance) {
           minDistance = distance;
@@ -518,7 +517,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         } : null,
                         style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF00B9CA),
-                            disabledBackgroundColor: Colors.grey.withOpacity(0.3),
+                            disabledBackgroundColor: Colors.grey,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                             elevation: 0),
@@ -558,7 +557,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         style: GoogleFonts.workSans(
           fontSize: isSelected ? 18 : 15,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Colors.black : Colors.grey.withOpacity(0.5),
+          color: isSelected ? Colors.black : Colors.grey,
         ),
         child: Text(text),
       ),
@@ -709,7 +708,7 @@ class FlowChartPainter extends CustomPainter {
     canvas.save();
     canvas.translate(leftMargin, 0);
 
-    final Paint gridPaint = Paint()..color = Colors.grey.withOpacity(0.15)..strokeWidth = 1;
+    final Paint gridPaint = Paint()..color = Colors.grey..strokeWidth = 1;
 
     final List<double> yTicks = selectedTab == 0 ? [0, 612, 1225, 1837, 2450] : [0, 0.45, 0.9, 1.36, 1.81];
     for (var tick in yTicks) {
@@ -747,7 +746,7 @@ class FlowChartPainter extends CustomPainter {
         if (points.length >= 2) {
           final Path path = Path();
           path.moveTo(points[1].dx, points[1].dy);
-          for (int i = 2; i < points.length; i++) path.lineTo(points[i].dx, points[i].dy);
+          for (int i = 2; i < points.length; i++)path.lineTo(points[i].dx, points[i].dy);
 
           final Path areaPath = Path.from(path)..lineTo(points.last.dx, h)..lineTo(points[1].dx, h)..close();
           final Paint fillPaint = Paint()..shader = ui.Gradient.linear(Offset(0, h - (sum / maxVal * h)), Offset(0, h), [const Color(0xFF00CDE0).withOpacity(0.6), const Color(0xFF00CDE0).withOpacity(0.0)]);
@@ -778,7 +777,7 @@ class FlowChartPainter extends CustomPainter {
 
           final Rect rect = Rect.fromLTRB(x - 6, y, x + 6, h);
           final RRect rrect = RRect.fromRectAndCorners(rect, topLeft: const Radius.circular(6), topRight: const Radius.circular(6));
-          final Paint barPaint = Paint()..shader = ui.Gradient.linear(Offset(0, y), Offset(0, h), [const Color(0xFF00CDE0).withOpacity(0.8), const Color(0xFF00CDE0).withOpacity(0.1)]);
+          final Paint barPaint = Paint()..shader = ui.Gradient.linear(Offset(0, y), Offset(0, h), [const Color(0xFF00CDE0), const Color(0xFF00CDE0)]);
           canvas.drawRRect(rrect, barPaint);
 
           canvas.drawCircle(Offset(x, y), 5, dotOutline);

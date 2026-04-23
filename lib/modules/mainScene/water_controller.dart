@@ -1,44 +1,33 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:permission_handler/permission_handler.dart';
-import '../../service/notification_service.dart';
-import 'package:intl/intl.dart';
 
 class DrinkLog {
   final double amount;
   final DateTime time;
-
   DrinkLog({required this.amount, required this.time});
+
+  // Biến data thành chuỗi để lưu vào ổ cứng
+  Map<String, dynamic> toJson() => {'amount': amount, 'time': time.toIso8601String()};
+  // Dịch chuỗi từ ổ cứng ra lại data
+  factory DrinkLog.fromJson(Map<String, dynamic> json) => DrinkLog(amount: json['amount'], time: DateTime.parse(json['time']));
 }
 
 class WaterController extends GetxController {
-  final _storage = GetStorage();
-  final _notificationService = NotificationService();
+  final box = GetStorage(); // Hộp lưu trữ
 
   var totalWater = 0.0.obs;
   var goalWater = 2000.0.obs;
   var dailyLogs = <DrinkLog>[].obs;
-  
-  var selectedLogIndex = (-1).obs;
-  
-  // Logic Reminder
-  var isReminderOn = true.obs;
-  var reminderTime = const TimeOfDay(hour: 11, minute: 0).obs;
-  var notificationPermissionGranted = true.obs;
-  var timeLeftString = "".obs;
-  var nextReminderDay = "".obs;
-  Timer? _timer;
 
-  // Navigation state
+  var selectedLogIndex = (-1).obs;
   var currentTab = 0.obs;
 
   final ScrollController scrollController = ScrollController();
 
   double get percentage => (totalWater.value / goalWater.value);
 
-  // LOGIC BIỂU ĐỒ: Lấy dữ liệu lượng nước tích lũy theo từng giờ (0-24h)
+  // ... (Giữ nguyên hàm dayChartData) ...
   List<double> get dayChartData {
     List<double> hourlyIntake = List.filled(25, 0.0);
     for (var log in dailyLogs) {
@@ -46,7 +35,6 @@ class WaterController extends GetxController {
         hourlyIntake[log.time.hour] += log.amount;
       }
     }
-    // Tính lũy kế để đường biểu đồ luôn đi lên
     List<double> cumulative = List.filled(25, 0.0);
     double sum = 0;
     for (int i = 0; i < 25; i++) {
@@ -56,93 +44,54 @@ class WaterController extends GetxController {
     return cumulative;
   }
 
-  // Gộp cốc cho màn hình Today
-  List<Map<String, dynamic>> get groupedLogs {
-    final Map<double, int> counts = {};
-    final List<double> order = [];
-    for (var log in dailyLogs) {
-      if (counts.containsKey(log.amount)) {
-        counts[log.amount] = counts[log.amount]! + 1;
-      } else {
-        counts[log.amount] = 1;
-        order.add(log.amount);
-      }
-    }
-    return order.map((amount) => {'amount': amount, 'count': counts[amount]}).toList();
-  }
-
   @override
   void onInit() {
     super.onInit();
-    _loadSettings();
-    checkNotificationPermission();
-    _startTimer();
+    _loadData(); // Tự động load dữ liệu khi mở app
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      updateTimeLeft();
-    });
-    updateTimeLeft();
+  @override
+  void onClose() {
+    scrollController.dispose();
+    super.onClose();
   }
 
-  void updateTimeLeft() {
-    if (!isReminderOn.value) {
-      timeLeftString.value = "";
-      nextReminderDay.value = "";
-      return;
-    }
-    final now = DateTime.now();
-    DateTime scheduled = DateTime(now.year, now.month, now.day, reminderTime.value.hour, reminderTime.value.minute);
-    if (scheduled.isBefore(now) || percentage >= 1.0) {
-      scheduled = scheduled.add(const Duration(days: 1));
-      nextReminderDay.value = DateFormat('EEEE').format(scheduled);
+  // ==========================================
+  // LOGIC LƯU TRỮ VÀ LOAD DỮ LIỆU
+  // ==========================================
+  void _loadData() {
+    String todayStr = "${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}";
+    String? lastSavedDate = box.read('lastDate');
+
+    // Nếu sang ngày mới -> Reset sạch sẽ
+    if (lastSavedDate != todayStr) {
+      totalWater.value = 0.0;
+      dailyLogs.clear();
+      box.write('lastDate', todayStr);
+      _saveToDisk();
     } else {
-      nextReminderDay.value = "";
+      // Nếu vẫn là hôm nay -> Load lại dữ liệu cũ
+      totalWater.value = box.read('totalWater') ?? 0.0;
+      List? storedLogs = box.read('dailyLogs');
+      if (storedLogs != null) {
+        dailyLogs.value = storedLogs.map((e) => DrinkLog.fromJson(e)).toList();
+      }
     }
-    final difference = scheduled.difference(now);
-    timeLeftString.value = "(${difference.inHours}h${(difference.inMinutes % 60).toString().padLeft(2, '0')} min left)";
   }
 
-  Future<void> checkNotificationPermission() async {
-    final status = await Permission.notification.status;
-    notificationPermissionGranted.value = status.isGranted;
+  void _saveToDisk() {
+    box.write('totalWater', totalWater.value);
+    box.write('dailyLogs', dailyLogs.map((e) => e.toJson()).toList());
   }
 
-  Future<void> requestNotificationPermission() async {
-    final status = await Permission.notification.request();
-    notificationPermissionGranted.value = status.isGranted;
-    if (status.isGranted && isReminderOn.value) _updateNotification();
-  }
-
-  void _loadSettings() {
-    isReminderOn.value = _storage.read('isReminderOn') ?? true;
-    int? hour = _storage.read('reminderHour');
-    int? minute = _storage.read('reminderMinute');
-    if (hour != null && minute != null) {
-      reminderTime.value = TimeOfDay(hour: hour, minute: minute);
-    }
-    if (isReminderOn.value) _updateNotification();
-  }
-
-  void updateReminderTime(TimeOfDay newTime) {
-    reminderTime.value = newTime;
-    _storage.write('reminderHour', newTime.hour);
-    _storage.write('reminderMinute', newTime.minute);
-    isReminderOn.value = true;
-    _storage.write('isReminderOn', true);
-    _updateNotification();
-    updateTimeLeft();
-  }
-
-  void _updateNotification() {
-    _notificationService.scheduleDailyNotification(reminderTime.value.hour, reminderTime.value.minute);
-  }
-
+  // ==========================================
+  // CÁC HÀM XỬ LÝ (Có gọi thêm hàm lưu)
+  // ==========================================
   void addWater(double amount) {
     totalWater.value += amount;
     dailyLogs.add(DrinkLog(amount: amount, time: DateTime.now()));
-    updateTimeLeft();
+    _saveToDisk(); // LƯU SAU KHI UỐNG
+
     Future.delayed(const Duration(milliseconds: 100), () {
       if (scrollController.hasClients) {
         scrollController.animateTo(scrollController.position.maxScrollExtent, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
@@ -155,19 +104,11 @@ class WaterController extends GetxController {
       totalWater.value -= dailyLogs[index].amount;
       dailyLogs.removeAt(index);
       selectedLogIndex.value = -1;
-      updateTimeLeft();
+      _saveToDisk(); // LƯU SAU KHI XÓA
     }
   }
 
-  void removeGroupedLog(double amount) {
-    int index = dailyLogs.lastIndexWhere((log) => log.amount == amount);
-    if (index != -1) removeLog(index);
-  }
-
-  void updateWaterByPercentage(double p) {
-    totalWater.value = (goalWater.value * p).clamp(0.0, goalWater.value * 2);
-  }
-  
+  // ... (Giữ nguyên các hàm selectLog, changeTab) ...
   void selectLog(int index, double screenWidth) {
     if (selectedLogIndex.value == index) {
       selectedLogIndex.value = -1;

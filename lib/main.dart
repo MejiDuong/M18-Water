@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
       child: GetMaterialApp(
         debugShowCheckedModeBanner: false,
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        supportedLocales: const <Locale>[Locale('ja', 'JP')],
+        supportedLocales: const <Locale>[Locale('en', 'US')],
         initialRoute: Routes.mainScene,
         initialBinding: AppBinding(),
         getPages: Pages.pages,

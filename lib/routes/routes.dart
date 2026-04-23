@@ -17,4 +17,6 @@ abstract class Routes {
   static const history = '/history';
   static const insight = '/insight';
   static const insightDetail = '/insight-detail';
+  static const reminder = '/reminder';
 }
+

@@ -8,6 +8,7 @@ import 'package:untitled/modules/mainScene/main_scene.dart';
 import 'package:untitled/modules/notePen/note_pen_scene.dart';
 import 'package:untitled/modules/profile/profile_scene.dart';
 import 'package:untitled/modules/record/record_player_scene.dart';
+import 'package:untitled/modules/reminder/reminder_screen.dart';
 import 'package:untitled/modules/top/top_scene.dart';
 import 'package:untitled/modules/history/history_screen.dart';
 import 'package:untitled/modules/insight/insight_screen.dart';
@@ -81,5 +82,10 @@ class Pages {
         bgColor: Get.arguments['bgColor'],
       ),
     ),
+    GetPage(
+      name: Routes.reminder,
+      page: () => const ReminderScreen(),
+    ),
+
   ];
 }

@@ -150,10 +150,13 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
           ),
           const SizedBox(height: 16),
           // 3. Phần chữ chi tiết
-          Container(
-            child: Text(
-              "Dehydration can lead to a range of health problems, including headaches, fatigue, and constipation.\n\nYour specific water needs may vary depending on many factors. Therefore, you can use our app to get your personal daily intake target and reminders to help you stay hydrated.",
-              style: GoogleFonts.workSans(fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF164F0D), height: 1.6),
+          Text(
+            "Dehydration can lead to a range of health problems, including headaches, fatigue, and constipation.\n\nYour specific water needs may vary depending on many factors. Therefore, you can use our app to get your personal daily intake target and reminders to help you stay hydrated.",
+            style: GoogleFonts.workSans(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF164F0D),
+              height: 1.6,
             ),
           ),
         ],

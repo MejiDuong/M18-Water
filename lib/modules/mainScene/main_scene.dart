@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:untitled/modules/bottom_sheet/congratulation_success.dart';
 import '../../widgets/wave.dart';
+import '../bottom_sheet/first_drink.dart';
+import '../reminder/reminder_controller.dart';
 import 'water_controller.dart';
-import 'main_controller.dart';
 import '../../routes/routes.dart';
 
 class MainBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<MainController>(() => MainController());
+    // Get.lazyPut<MainController>(() => MainController());
     Get.lazyPut<WaterController>(() => WaterController());
+    Get.put(ReminderController());
   }
 }
 
@@ -142,7 +145,7 @@ class MainScene extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white,
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -185,92 +188,121 @@ class MainScene extends StatelessWidget {
     );
   }
 
-  Widget _buildReminderStatus(WaterController controller) {
+  Widget _buildReminderStatus(WaterController waterController) {
+    // Gọi ReminderController để lấy data báo thức
+    final ReminderController reminderController = Get.find<ReminderController>();
+    final Color mainTextColor = const Color(0xFF0A0C11);
+    final Color subTextColor = Colors.grey;
+
     return Obx(() {
-      if (!controller.notificationPermissionGranted.value) {
-        return GestureDetector(
-          onTap: () => controller.requestNotificationPermission(),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.notifications_off,
-                size: 18,
-                color: Color(0xFF0A0C11),
+      // Ưu tiên 1 - Công tắc tổng đang tắt
+      if (reminderController.isMasterOn.value == false) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              "Reminder: Off",
+              style: GoogleFonts.workSans(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: mainTextColor,
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Reminder Permission Needed',
-                style: GoogleFonts.workSans(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: const Color(0xFF0A0C11),
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ],
-          ),
+            ),
+            _buildEditButton(),
+          ],
         );
       }
 
-      final isGoalReached = controller.percentage >= 1.0;
-      final timeStr = controller.reminderTime.value.format(Get.context!);
-      final dayStr = controller.nextReminderDay.value.isNotEmpty
-          ? " ${controller.nextReminderDay.value}"
-          : "";
+      // Ưu tiên 2 - Đã hoàn thành mục tiêu (Lấy % từ WaterController, check Stop từ ReminderController)
+      if (waterController.percentage >= 1.0 && reminderController.stopWhenGoalAchieved.value == true) {
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Next Reminder: Tomorrow", // Bạn có thể update logic lấy ngày mai vào đây sau
+                  style: GoogleFonts.workSans(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: mainTextColor,
+                  ),
+                ),
+                _buildEditButton(),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              "Great job! You've reached your goal today!",
+              style: GoogleFonts.workSans(
+                fontSize: 12,
+                color: Color(0xFF5B616D)
+              ),
+            ),
+          ],
+        );
+      }
 
+      // Ưu tiên 3 - Trạng thái bình thường
       return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                controller.isReminderOn.value
-                    ? 'Next Reminder: $timeStr$dayStr'
-                    : 'Reminder: Off',
+                "Next Reminder: 11:00 AM", // Chỗ này sau sẽ nối với logic đếm giờ thực tế của ReminderController
                 style: GoogleFonts.workSans(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: const Color(0xFF0A0C11),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: mainTextColor,
                 ),
               ),
-              const SizedBox(width: 4),
-              _buildEditButton(controller),
+              _buildEditButton(),
             ],
           ),
           const SizedBox(height: 2),
-          if (isGoalReached)
-            Text(
-              "Great job! You've reached your goal today!",
-              style: GoogleFonts.workSans(
-                fontSize: 11,
-                color: Colors.black45,
-                fontWeight: FontWeight.w500,
-              ),
-            )
-          else if (controller.isReminderOn.value)
-            Text(
-              controller.timeLeftString.value,
-              style: GoogleFonts.workSans(fontSize: 11, color: Colors.black45),
+          Text(
+            "(4h32 min left)", // Chỗ này sau sẽ nối với logic đếm ngược thực tế
+            style: GoogleFonts.workSans(
+              fontSize: 12,
+              color: subTextColor,
             ),
+          ),
         ],
       );
     });
   }
 
-  Widget _buildEditButton(WaterController controller) {
+  // Chỉnh lại nút Edit không cần truyền controller nữa
+  Widget _buildEditButton() {
     return InkWell(
-      onTap: () async {
-        TimeOfDay? pickedTime = await showTimePicker(
-          context: Get.context!,
-          initialTime: controller.reminderTime.value,
-        );
-        if (pickedTime != null) controller.updateReminderTime(pickedTime);
-      },
-      borderRadius: BorderRadius.circular(4),
-      child: const Padding(
-        padding: EdgeInsets.all(2.0),
-        child: Icon(Icons.edit_outlined, size: 16, color: Colors.black45),
+      onTap: () => Get.toNamed(Routes.reminder),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child:  Container(
+          height: 32,
+          width: 32,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Color(0xFFEBECF0),
+              width: 1,
+            ),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.edit,
+              size: 14,
+              color: Colors.black,
+            ),
+          ),
+        )
       ),
     );
   }
@@ -370,13 +402,28 @@ class MainScene extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         // NÚT DRINK
+                        // NÚT + DRINK XANH LÁ
                         Material(
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () {
                               if (hasSelection) {
+                                // 1. Chụp lại mức nước hiện tại
+                                double currentTotal = controller.totalWater.value;
+                                double goal = controller.goalWater.value;
+
+                                // 2. Cộng nước và tắt chọn (để menu xanh thụt xuống)
                                 controller.addWater(selectedAmount);
                                 controller.selectedLogIndex.value = -1;
+
+                                // 3. Kiểm tra xem có vừa chạm mốc không
+                                if (currentTotal < goal && controller.totalWater.value >= goal) {
+                                  // QUAN TRỌNG: Đợi 0.3 giây cho cái menu xanh thụt xuống biến mất hẳn
+                                  // rồi mới bắn cái Bottom Sheet chúc mừng lên cho mượt!
+                                  Future.delayed(const Duration(milliseconds: 300), () {
+                                    CongratulationSuccess.show();
+                                  });
+                                }
                               }
                             },
                             borderRadius: BorderRadius.circular(12),
@@ -384,7 +431,7 @@ class MainScene extends StatelessWidget {
                               height: 48,
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF4DB64D),
+                                color: const Color(0xFF4DB64D), // Nền xanh lá
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
@@ -607,7 +654,25 @@ class MainScene extends StatelessWidget {
                   onPressed: () {
                     final amount = double.tryParse(textController.text);
                     if (amount != null && amount > 0) {
+                      // 1. Lưu lại thông tin TRƯỚC KHI uống
+                      double currentTotal = controller.totalWater.value;
+                      double goal = controller.goalWater.value;
+                      int oldLogCount = controller.dailyLogs.length;
+
+                      // 2. Bơm nước vào người
                       controller.addWater(amount);
+
+                      // 3. LOGIC XUẤT HIỆN Ở ĐÂY:
+                      // Ưu tiên 1: Uống ly này xong là đạt target 2000ml -> Cúp vàng
+                      if (currentTotal < goal && controller.totalWater.value >= goal) {
+                        Future.delayed(const Duration(milliseconds: 300), () => CongratulationSuccess.show());
+                      }
+                      // Ưu tiên 2: Lúc nãy chưa có ly nào, đây là ly đầu tiên -> Ly có tick xanh
+                      else if (oldLogCount == 0) {
+                        Future.delayed(const Duration(milliseconds: 300), () => FirstDrinkBottomSheet.show());
+                      }
+
+                      // Đóng cái bảng nhập số ml lại
                       Navigator.pop(context);
                     }
                   },
@@ -707,7 +772,8 @@ class _NavItem extends StatelessWidget {
             SvgPicture.asset(
               svgPath,
               colorFilter: ColorFilter.mode(
-                isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+                // Sáng trắng nếu chọn, trắng mờ nếu chưa chọn
+                isSelected ? Colors.white : Colors.white54,
                 BlendMode.srcIn,
               ),
               width: 28,
@@ -717,7 +783,8 @@ class _NavItem extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.workSans(
-                color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+                // Sáng trắng nếu chọn, trắng mờ nếu chưa chọn
+                color: isSelected ? Colors.white : Colors.white54,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
