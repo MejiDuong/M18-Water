@@ -327,10 +327,7 @@ class MainScene extends StatelessWidget {
           ),
         );
       }
-
-      // =========================================================
-      // LÓGIC GỘP CỐC (Gộp tất cả các cốc có cùng số ml lại với nhau)
-      // =========================================================
+      // LOGIC GỘP CỐC (Gộp tất cả các cốc có cùng số ml lại với nhau)
       List<Map<String, dynamic>> groupedLogs = [];
 
       for (int i = 0; i < controller.dailyLogs.length; i++) {
@@ -349,12 +346,10 @@ class MainScene extends StatelessWidget {
           });
         }
       }
-
       // Lấy trạng thái của Menu
       final selectedIndex = controller.selectedLogIndex.value;
       final hasSelection = selectedIndex != -1 && selectedIndex < controller.dailyLogs.length;
       final selectedAmount = hasSelection ? controller.dailyLogs[selectedIndex].amount : 0.0;
-
       return SizedBox(
         height: 180, // Chiều cao tổng của Column
         child: Column(
@@ -401,7 +396,6 @@ class MainScene extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // NÚT DRINK
                         // NÚT + DRINK XANH LÁ
                         Material(
                           color: Colors.transparent,
@@ -460,7 +454,6 @@ class MainScene extends StatelessWidget {
                 ),
               ),
             ),
-
             // 2. TẦNG CỐC NƯỚC (Giờ sẽ build theo danh sách đã gộp - groupedLogs)
             SizedBox(
               height: 100,
@@ -527,7 +520,6 @@ class MainScene extends StatelessWidget {
                               ),
                             ),
                           ),
-
                           // CỤC BADGE MÀU VÀNG (Chỉ hiện khi đếm > 1)
                           if (count > 1)
                             Positioned(
@@ -563,7 +555,6 @@ class MainScene extends StatelessWidget {
       );
     });
   }
-
   Widget _buildDrinkButton(BuildContext context, WaterController controller) {
     return InkWell(
       onTap: () => _showDrinkOptions(context, controller),
@@ -600,7 +591,6 @@ class MainScene extends StatelessWidget {
       ),
     );
   }
-
   void _showDrinkOptions(BuildContext context, WaterController controller) {
     final textController = TextEditingController();
     showModalBottomSheet(
@@ -658,10 +648,8 @@ class MainScene extends StatelessWidget {
                       double currentTotal = controller.totalWater.value;
                       double goal = controller.goalWater.value;
                       int oldLogCount = controller.dailyLogs.length;
-
                       // 2. Bơm nước vào người
                       controller.addWater(amount);
-
                       // 3. LOGIC XUẤT HIỆN Ở ĐÂY:
                       // Ưu tiên 1: Uống ly này xong là đạt target 2000ml -> Cúp vàng
                       if (currentTotal < goal && controller.totalWater.value >= goal) {

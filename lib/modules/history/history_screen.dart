@@ -130,7 +130,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       // Tạo một đường gạch dưới mờ mờ chạy dọc toàn bộ 3 tab (Unselected state)
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: const Color(0xFF00CDE0).withOpacity(0.3), width: 1.0),
+          bottom: BorderSide(color: const Color(0xFF00CDE0), width: 1.0),
         ),
       ),
       child: Row(
@@ -421,7 +421,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          content: Container(
+          content: SizedBox(
             width: MediaQuery.of(context).size.width,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -469,7 +469,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      Container(height: 35, width: double.infinity, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.05), borderRadius: BorderRadius.circular(8))),
                       Row(
                         children: [
                           _buildWheelColumn(daysLabels, selectedDayIdx, dayScrollController, (v) => setDialogState(() => selectedDayIdx = v)),
@@ -746,10 +745,12 @@ class FlowChartPainter extends CustomPainter {
         if (points.length >= 2) {
           final Path path = Path();
           path.moveTo(points[1].dx, points[1].dy);
-          for (int i = 2; i < points.length; i++)path.lineTo(points[i].dx, points[i].dy);
+          for (int i = 2; i < points.length; i++) {
+            path.lineTo(points[i].dx, points[i].dy);
+          }
 
           final Path areaPath = Path.from(path)..lineTo(points.last.dx, h)..lineTo(points[1].dx, h)..close();
-          final Paint fillPaint = Paint()..shader = ui.Gradient.linear(Offset(0, h - (sum / maxVal * h)), Offset(0, h), [const Color(0xFF00CDE0).withOpacity(0.6), const Color(0xFF00CDE0).withOpacity(0.0)]);
+          final Paint fillPaint = Paint()..shader = ui.Gradient.linear(Offset(0, h - (sum / maxVal * h)), Offset(0, h), [const Color(0xFF00CDE0), const Color(0xFF00CDE0)]);
           canvas.drawPath(areaPath, fillPaint);
 
           final Paint linePaint = Paint()..color = const Color(0xFF00CDE0)..strokeWidth = 3.5..style = ui.PaintingStyle.stroke;
@@ -843,7 +844,6 @@ class FlowChartPainter extends CustomPainter {
     }
   }
 
-  @override
   bool shouldReclip(CustomClipper oldClipper) => false;
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
@@ -874,7 +874,7 @@ class _NavItem extends StatelessWidget {
             SvgPicture.asset(
               svgPath,
               colorFilter: ColorFilter.mode(
-                isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+                isSelected ? Colors.white : Colors.white,
                 BlendMode.srcIn,
               ),
               width: 28,
@@ -896,18 +896,3 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-class _TagClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    Path path = Path();
-    path.lineTo(size.width - 15, 0);
-    path.lineTo(size.width, size.height / 2);
-    path.lineTo(size.width - 15, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}

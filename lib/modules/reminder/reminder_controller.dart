@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart'; // Bổ sung GetStorage
+import 'package:get_storage/get_storage.dart';
+import 'package:intl/intl.dart';
 
 // ==========================================
 // CÁC CLASS DỮ LIỆU ĐƯỢC NÂNG CẤP ĐỂ LƯU TRỮ
@@ -14,19 +16,8 @@ class StandardReminder {
       : time = time.obs,
         isEnabled = isEnabled.obs;
 
-  // Dịch ra JSON để cất vào ổ cứng
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'time': time.value,
-    'isEnabled': isEnabled.value,
-  };
-
-  // Dịch từ JSON ra lại Data khi mở app
-  factory StandardReminder.fromJson(Map<String, dynamic> json) => StandardReminder(
-    name: json['name'],
-    time: json['time'],
-    isEnabled: json['isEnabled'],
-  );
+  Map<String, dynamic> toJson() => {'name': name, 'time': time.value, 'isEnabled': isEnabled.value};
+  factory StandardReminder.fromJson(Map<String, dynamic> json) => StandardReminder(name: json['name'], time: json['time'], isEnabled: json['isEnabled']);
 }
 
 class CustomTime {
@@ -37,42 +28,40 @@ class CustomTime {
       : time = time.obs,
         isEnabled = isEnabled.obs;
 
-  Map<String, dynamic> toJson() => {
-    'time': time.value,
-    'isEnabled': isEnabled.value,
-  };
-
-  factory CustomTime.fromJson(Map<String, dynamic> json) => CustomTime(
-    time: json['time'],
-    isEnabled: json['isEnabled'],
-  );
+  Map<String, dynamic> toJson() => {'time': time.value, 'isEnabled': isEnabled.value};
+  factory CustomTime.fromJson(Map<String, dynamic> json) => CustomTime(time: json['time'], isEnabled: json['isEnabled']);
 }
 
 class ReminderController extends GetxController {
-  final box = GetStorage(); // Hộp lưu trữ
+  final box = GetStorage();
 
-  // 1. Công tắc tổng
+  // 1. Công tắc tổng & Chế độ
   var isMasterOn = true.obs;
-
-  // 2. Chế độ hiện tại (0: Standard, 1: Interval, 2: Custom)
   var currentMode = 0.obs;
   var tempSelectedMode = 0.obs;
 
   // ==========================================
-  // CHẾ ĐỘ STANDARD
+  // BIẾN HIỂN THỊ ĐẾM NGƯỢC LÊN MÀN HÌNH
   // ==========================================
-  final standardReminders = <StandardReminder>[].obs;
+  var nextReminderTime = "00:00 AM".obs;
+  var timeLeft = "".obs;
+  Timer? _timer;
 
   // ==========================================
-  // CHẾ ĐỘ INTERVAL
+  // DANH SÁCH GIỜ CỦA CÁC CHẾ ĐỘ
   // ==========================================
-  var intervalDuration = "1 hour 30min".obs;
+  final standardReminders = <StandardReminder>[].obs;
+  final weekendStandardReminders = <StandardReminder>[].obs;
+
+  var intervalDuration = "1 hour 30 min".obs;
   var bedtimeStart = "11:00 PM".obs;
   var bedtimeEnd = "08:00 AM".obs;
 
-  // ==========================================
-  // CHẾ ĐỘ CUSTOM
-  // ==========================================
+  // [MỚI THÊM] BIẾN INTERVAL CHO CUỐI TUẦN ĐỂ UI KHÔNG BỊ LỖI
+  var weekendIntervalDuration = "2 hours".obs;
+  var weekendBedtimeStart = "11:00 PM".obs;
+  var weekendBedtimeEnd = "08:00 AM".obs;
+
   var customTimes = <CustomTime>[].obs;
 
   // ==========================================
@@ -86,30 +75,173 @@ class ReminderController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadData(); // Gọi hàm load dữ liệu ngay khi mở app
-    _setupAutoSave(); // Bật chế độ tự động lưu
+    _loadData();
+    _setupAutoSave();
+
+    calculateNextReminder();
+    _timer = Timer.periodic(const Duration(seconds: 10), (_) => calculateNextReminder());
+  }
+
+  @override
+  void onClose() {
+    _timer?.cancel();
+    super.onClose();
   }
 
   // ==========================================
-  // LOGIC LƯU TRỮ (TỰ ĐỘNG & VĨNH VIỄN)
+  // TỰ ĐỘNG TẠO CHUỖI GIỜ INTERVAL HIỂN THỊ UI
+  // ==========================================
+  String getWeekdayIntervalText() {
+    return _generateIntervalText(intervalDuration.value, bedtimeEnd.value, bedtimeStart.value);
+  }
+
+  String getWeekendIntervalText() {
+    return _generateIntervalText(weekendIntervalDuration.value, weekendBedtimeEnd.value, weekendBedtimeStart.value);
+  }
+
+  String _generateIntervalText(String durationStr, String startStr, String endStr) {
+    DateTime start = _parseTime(startStr);
+    DateTime end = _parseTime(endStr);
+    if (end.isBefore(start)) end = end.add(const Duration(days: 1));
+
+    Duration step = _parseDurationStr(durationStr);
+    List<String> times = [];
+
+    if (step.inMinutes > 0) {
+      DateTime current = start;
+      while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
+        times.add(DateFormat("hh:mm a").format(current));
+        current = current.add(step);
+      }
+    }
+    return times.join(", ");
+  }
+
+  // ==========================================
+  // THUẬT TOÁN TÍNH GIỜ TIẾP THEO
+  // ==========================================
+  void calculateNextReminder() {
+    if (!isMasterOn.value) {
+      nextReminderTime.value = "Off";
+      timeLeft.value = "";
+      return;
+    }
+
+    DateTime now = DateTime.now();
+    List<DateTime> allActiveTimes = [];
+    bool isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
+
+    if (currentMode.value == 0) { // Standard
+      var activeList = (isWeekend && isWeekendModeOn.value) ? weekendStandardReminders : standardReminders;
+      for (var item in activeList) {
+        if (item.isEnabled.value) allActiveTimes.add(_parseTime(item.time.value));
+      }
+    }
+    else if (currentMode.value == 1) { // Interval
+      String dur = (isWeekend && isWeekendModeOn.value) ? weekendIntervalDuration.value : intervalDuration.value;
+      String bStart = (isWeekend && isWeekendModeOn.value) ? weekendBedtimeStart.value : bedtimeStart.value;
+      String bEnd = (isWeekend && isWeekendModeOn.value) ? weekendBedtimeEnd.value : bedtimeEnd.value;
+
+      DateTime start = _parseTime(bEnd); // Thức
+      DateTime end = _parseTime(bStart); // Ngủ
+      if (end.isBefore(start)) end = end.add(const Duration(days: 1));
+
+      Duration step = _parseDurationStr(dur);
+      if (step.inMinutes > 0) {
+        DateTime current = start;
+        while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
+          allActiveTimes.add(current);
+          current = current.add(step);
+        }
+      }
+    }
+    else if (currentMode.value == 2) { // Custom
+      for (var item in customTimes) {
+        if (item.isEnabled.value) allActiveTimes.add(_parseTime(item.time.value));
+      }
+    }
+
+    if (allActiveTimes.isEmpty) {
+      nextReminderTime.value = "No Alarms";
+      timeLeft.value = "";
+      return;
+    }
+
+    allActiveTimes.sort();
+    DateTime? nextTime;
+    for (var t in allActiveTimes) {
+      if (t.isAfter(now)) {
+        nextTime = t;
+        break;
+      }
+    }
+
+    if (nextTime == null) {
+      nextTime = allActiveTimes.first.add(const Duration(days: 1));
+    }
+
+    nextReminderTime.value = DateFormat("hh:mm a").format(nextTime);
+    Duration diff = nextTime.difference(now);
+    int hours = diff.inHours;
+    int minutes = diff.inMinutes % 60;
+    timeLeft.value = "(${hours > 0 ? '${hours}h ' : ''}${minutes.toString().padLeft(2, '0')} min left)";
+  }
+
+  // --- Parser ---
+  DateTime _parseTime(String timeStr) {
+    try {
+      final time = DateFormat("hh:mm a").parse(timeStr);
+      final now = DateTime.now();
+      return DateTime(now.year, now.month, now.day, time.hour, time.minute);
+    } catch (e) {
+      return DateTime.now();
+    }
+  }
+
+  Duration _parseDurationStr(String durStr) {
+    int hours = 0;
+    int mins = 0;
+    String lower = durStr.toLowerCase();
+
+    if (lower.contains("hour")) {
+      var parts = lower.split("hour");
+      hours = int.tryParse(parts[0].replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+    }
+    if (lower.contains("min")) {
+      var parts = lower.split("min");
+      String minStr = parts[0];
+      if (lower.contains("hour")) {
+        minStr = lower.split("hour").last;
+      }
+      mins = int.tryParse(minStr.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+    }
+    return Duration(hours: hours, minutes: mins);
+  }
+
+  // ==========================================
+  // LƯU TRỮ VÀ TẢI DỮ LIỆU
   // ==========================================
   void _loadData() {
     isMasterOn.value = box.read('isMasterOn') ?? true;
     currentMode.value = box.read('currentMode') ?? 0;
-    intervalDuration.value = box.read('intervalDuration') ?? "1 hour 30min";
+
+    intervalDuration.value = box.read('intervalDuration') ?? "1 hour 30 min";
     bedtimeStart.value = box.read('bedtimeStart') ?? "11:00 PM";
     bedtimeEnd.value = box.read('bedtimeEnd') ?? "08:00 AM";
+
+    weekendIntervalDuration.value = box.read('weekendIntervalDuration') ?? "2 hours";
+    weekendBedtimeStart.value = box.read('weekendBedtimeStart') ?? "11:00 PM";
+    weekendBedtimeEnd.value = box.read('weekendBedtimeEnd') ?? "08:00 AM";
+
     isWeekendModeOn.value = box.read('isWeekendModeOn') ?? false;
     stopWhenGoalAchieved.value = box.read('stopWhenGoalAchieved') ?? true;
     isSmartSkipOn.value = box.read('isSmartSkipOn') ?? true;
     smartSkipDuration.value = box.read('smartSkipDuration') ?? "1 hour";
 
-    // Load list Standard
     List? storedStandard = box.read('standardReminders');
     if (storedStandard != null) {
       standardReminders.value = storedStandard.map((e) => StandardReminder.fromJson(e)).toList();
     } else {
-      // Dữ liệu mặc định nếu người dùng mới cài app lần đầu
       standardReminders.addAll([
         StandardReminder(name: 'After Wake-up', time: '07:00 AM'),
         StandardReminder(name: 'Before Breakfast', time: '08:20 AM'),
@@ -122,12 +254,26 @@ class ReminderController extends GetxController {
       ]);
     }
 
-    // Load list Custom
+    List? storedWeekend = box.read('weekendStandardReminders');
+    if (storedWeekend != null) {
+      weekendStandardReminders.value = storedWeekend.map((e) => StandardReminder.fromJson(e)).toList();
+    } else {
+      weekendStandardReminders.addAll([
+        StandardReminder(name: 'After Wake-up', time: '08:00 AM'),
+        StandardReminder(name: 'Before Breakfast', time: '09:00 AM'),
+        StandardReminder(name: 'After Breakfast', time: '10:00 AM'),
+        StandardReminder(name: 'Before Lunch', time: '12:00 PM'),
+        StandardReminder(name: 'After Lunch', time: '01:30 PM'),
+        StandardReminder(name: 'Before Dinner', time: '06:30 PM'),
+        StandardReminder(name: 'After Dinner', time: '08:00 PM'),
+        StandardReminder(name: 'Before Sleep', time: '11:00 PM'),
+      ]);
+    }
+
     List? storedCustom = box.read('customTimes');
     if (storedCustom != null) {
       customTimes.value = storedCustom.map((e) => CustomTime.fromJson(e)).toList();
     } else {
-      // Dữ liệu mặc định
       customTimes.addAll([
         CustomTime(time: '06:30 AM', isEnabled: false),
         CustomTime(time: '08:00 AM', isEnabled: true),
@@ -146,21 +292,18 @@ class ReminderController extends GetxController {
   }
 
   void _setupAutoSave() {
-    // Tự động lưu khi các biến cơ bản thay đổi
     everAll([
       isMasterOn, currentMode, intervalDuration, bedtimeStart, bedtimeEnd,
+      weekendIntervalDuration, weekendBedtimeStart, weekendBedtimeEnd,
       isWeekendModeOn, stopWhenGoalAchieved, isSmartSkipOn, smartSkipDuration
-    ], (_) => _saveToDisk());
+    ], (_) {
+      _saveToDisk();
+      calculateNextReminder();
+    });
 
-    // Giám sát từng thẻ giờ (Standard & Custom) để tự lưu khi đổi giờ hoặc bật/tắt công tắc con
-    for (var item in standardReminders) {
-      ever(item.isEnabled, (_) => _saveToDisk());
-      ever(item.time, (_) => _saveToDisk());
-    }
-    for (var item in customTimes) {
-      ever(item.isEnabled, (_) => _saveToDisk());
-      ever(item.time, (_) => _saveToDisk());
-    }
+    for (var item in standardReminders) { ever(item.isEnabled, (_) { _saveToDisk(); calculateNextReminder(); }); ever(item.time, (_) { _saveToDisk(); calculateNextReminder(); }); }
+    for (var item in weekendStandardReminders) { ever(item.isEnabled, (_) { _saveToDisk(); calculateNextReminder(); }); ever(item.time, (_) { _saveToDisk(); calculateNextReminder(); }); }
+    for (var item in customTimes) { ever(item.isEnabled, (_) { _saveToDisk(); calculateNextReminder(); }); ever(item.time, (_) { _saveToDisk(); calculateNextReminder(); }); }
   }
 
   void _saveToDisk() {
@@ -169,61 +312,21 @@ class ReminderController extends GetxController {
     box.write('intervalDuration', intervalDuration.value);
     box.write('bedtimeStart', bedtimeStart.value);
     box.write('bedtimeEnd', bedtimeEnd.value);
+    box.write('weekendIntervalDuration', weekendIntervalDuration.value);
+    box.write('weekendBedtimeStart', weekendBedtimeStart.value);
+    box.write('weekendBedtimeEnd', weekendBedtimeEnd.value);
     box.write('isWeekendModeOn', isWeekendModeOn.value);
     box.write('stopWhenGoalAchieved', stopWhenGoalAchieved.value);
     box.write('isSmartSkipOn', isSmartSkipOn.value);
     box.write('smartSkipDuration', smartSkipDuration.value);
 
-    // Lưu các List
     box.write('standardReminders', standardReminders.map((e) => e.toJson()).toList());
+    box.write('weekendStandardReminders', weekendStandardReminders.map((e) => e.toJson()).toList());
     box.write('customTimes', customTimes.map((e) => e.toJson()).toList());
-  }
-
-  // ==========================================
-  // CÁC HÀM XỬ LÝ
-  // ==========================================
-  Future<void> pickTime(BuildContext context, RxString timeObs) async {
-    final timeParts = timeObs.value.split(' ');
-    final hm = timeParts[0].split(':');
-    int hour = int.parse(hm[0]);
-    int minute = int.parse(hm[1]);
-
-    if (timeParts.length > 1) {
-      if (timeParts[1] == 'PM' && hour < 12) hour += 12;
-      if (timeParts[1] == 'AM' && hour == 12) hour = 0;
-    }
-
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: hour, minute: minute),
-      builder: (context, child) {
-        return Theme(
-          // Trả lại theme sáng cho bạn đỡ bị lỗi màu nhé!
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF00B9CA),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      final hourStr = picked.hourOfPeriod == 0 ? "12" : picked.hourOfPeriod.toString().padLeft(2, '0');
-      final minStr = picked.minute.toString().padLeft(2, '0');
-      final period = picked.period == DayPeriod.am ? "AM" : "PM";
-      timeObs.value = "$hourStr:$minStr $period";
-      // Lưu ý: Đổi giá trị ở đây, hàm ever() ở trên sẽ tự bắt được và gọi _saveToDisk() luôn!
-    }
   }
 
   void saveMode() {
     currentMode.value = tempSelectedMode.value;
-    // Hàm ever() sẽ tự động save
     Get.back();
   }
 
@@ -237,16 +340,14 @@ class ReminderController extends GetxController {
   }
 
   void addCustomTime(BuildContext context) async {
-    var newTime = "08:00 AM".obs;
-    await pickTime(context, newTime);
-
-    var newItem = CustomTime(time: newTime.value);
+    // Chỉ tạo giờ mặc định. Người dùng sẽ dùng Bottom Sheet bên UI để sửa lại sau.
+    var newItem = CustomTime(time: "08:00 AM".obs.value);
     customTimes.add(newItem);
 
-    // Phải giám sát luôn cả cái item mới thêm vào này để nó tự lưu
-    ever(newItem.time, (_) => _saveToDisk());
-    ever(newItem.isEnabled, (_) => _saveToDisk());
+    ever(newItem.time, (_) { _saveToDisk(); calculateNextReminder(); });
+    ever(newItem.isEnabled, (_) { _saveToDisk(); calculateNextReminder(); });
 
-    _saveToDisk(); // Update ngay lập tức xuống ổ cứng
+    _saveToDisk();
+    calculateNextReminder();
   }
 }

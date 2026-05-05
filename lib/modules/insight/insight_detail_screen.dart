@@ -29,7 +29,6 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
     // Tự động tính toán màu chữ đậm từ màu nền nhạt
     final HSLColor hsl = HSLColor.fromColor(widget.bgColor);
     final Color darkTextColor = hsl.withLightness((hsl.lightness - 0.6).clamp(0.1, 0.3)).toColor();
-
     return Scaffold(
       backgroundColor: widget.bgColor,
       appBar: AppBar(
@@ -102,7 +101,10 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
           Center(
             child: Column(
               children: [
-                Icon(Icons.keyboard_double_arrow_down, color: Color(0xFF164F0D)),
+                Icon(
+                  Icons.keyboard_double_arrow_down,
+                  color: Color(0xFF164F0D),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   "Swipe to continue",
@@ -128,7 +130,6 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 24),
-
           // 1. Hình tròn số 1
           Container(
             width: 32,

@@ -84,9 +84,7 @@ class WaterController extends GetxController {
     box.write('dailyLogs', dailyLogs.map((e) => e.toJson()).toList());
   }
 
-  // ==========================================
   // CÁC HÀM XỬ LÝ (Có gọi thêm hàm lưu)
-  // ==========================================
   void addWater(double amount) {
     totalWater.value += amount;
     dailyLogs.add(DrinkLog(amount: amount, time: DateTime.now()));
