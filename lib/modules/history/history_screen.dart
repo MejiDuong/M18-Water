@@ -792,7 +792,6 @@ class FlowChartPainter extends CustomPainter {
       }
     }
 
-    // TẠO NHÃN TRỤC X ĐỘNG (Sinh ra số cuối cùng là 28, 29, 30 hoặc 31)
     List<String> xLabels;
     if (selectedTab == 0) {
       xLabels = ["0", "4", "8", "12", "16", "20", "24"];
@@ -861,8 +860,7 @@ class _NavItem extends StatelessWidget {
     this.isSelected = false,
     this.onTap,
   });
-
-  @override
+    @override
   Widget build(BuildContext context) {
     return Expanded(
       child: InkWell(
@@ -874,7 +872,7 @@ class _NavItem extends StatelessWidget {
             SvgPicture.asset(
               svgPath,
               colorFilter: ColorFilter.mode(
-                isSelected ? Colors.white : Colors.white,
+                isSelected ? Colors.white : Colors.white54,
                 BlendMode.srcIn,
               ),
               width: 28,
@@ -884,7 +882,7 @@ class _NavItem extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.workSans(
-                color: isSelected ? Colors.white : Colors.white,
+                color: isSelected ? Colors.white : Colors.white54,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
@@ -895,4 +893,3 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
-

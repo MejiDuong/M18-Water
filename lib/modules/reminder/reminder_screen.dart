@@ -42,7 +42,7 @@ class ReminderScreen extends StatelessWidget {
         actions: [
           Obx(() => Switch(
             value: controller.isMasterOn.value,
-            onChanged: (val) => controller.isMasterOn.value = val,
+            onChanged: (val) => controller.toggleMasterSwitch(val),
             activeTrackColor: primaryCyan,
           )),
           const SizedBox(width: 8),
@@ -397,10 +397,7 @@ class ReminderScreen extends StatelessWidget {
       ],
     );
   }
-
-  // =========================================================
   // GIAO DIỆN BOTTOM SHEET CHỌN DURATION (DÙNG CHUNG SMART SKIP & INTERVAL)
-  // =========================================================
   void _showDurationPickerBottomSheet(BuildContext context, ReminderController controller, String title, RxString targetObs, Color primaryCyan, {bool isSmartSkip = false}) {
     bool tempIsOn = isSmartSkip ? controller.isSmartSkipOn.value : true;
     String tempDuration = targetObs.value;
@@ -538,9 +535,7 @@ class ReminderScreen extends StatelessWidget {
     );
   }
 
-  // =========================================================
   // GIAO DIỆN BOTTOM SHEET CHỌN GIỜ (GIỐNG HỆT ẢNH THIẾT KẾ)
-  // =========================================================
   void _showTimePickerBottomSheet(BuildContext context, ReminderController controller, String title, RxString timeObs, Color primaryCyan) {
     List<String> parts = timeObs.value.split(' ');
     List<String> hm = parts[0].split(':');
@@ -577,7 +572,7 @@ class ReminderScreen extends StatelessWidget {
                       children: [
                         Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
                         Switch(
-                          value: true, // Công tắc giả cho đẹp theo thiết kế
+                          value: true,
                           onChanged: (val) {},
                           activeTrackColor: primaryCyan,
                         ),
