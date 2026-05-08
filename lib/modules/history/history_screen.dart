@@ -106,7 +106,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             Expanded(
               child: SingleChildScrollView(
                 child: Obx(() {
-                  final filteredLogs = _getFilteredLogs(controller.dailyLogs);
+                  final filteredLogs = _getFilteredLogs(controller.historyLogs);
                   return Column(
                     children: [
                       _buildOverviewCard(filteredLogs, controller.goalWater.value),
@@ -147,10 +147,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     bool isSelected = selectedTab == index;
     return Expanded(
       child: InkWell(
-        // THÊM 2 DÒNG NÀY ĐỂ TẮT BÓNG MỜ KHI BẤM
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
-
         onTap: () => setState(() {
           selectedTab = index;
           focusedDate = DateTime.now();
@@ -222,9 +220,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       int recordedDays = logs.map((log) => log.time.day).toSet().length;
       average = total / recordedDays;
     }
-
     int daysInMonth = DateUtils.getDaysInMonth(focusedDate.year, focusedDate.month);
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       padding: const EdgeInsets.all(20),
@@ -270,8 +266,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             height: 200,
             child: LayoutBuilder(
                 builder: (context, constraints) {
-                  return GestureDetector( // CHUYỂN VỀ GESTURE DETECTOR
-                    // CHÌA KHÓA Ở ĐÂY: Ép nhận diện cảm ứng trên toàn bộ bề mặt biểu đồ
+                  return GestureDetector(
+                    //Ép nhận diện cảm ứng trên toàn bộ bề mặt biểu đồ
                     behavior: HitTestBehavior.opaque,
                     onTapDown: (details) {
                       _handleChartTap(details.localPosition, constraints.biggest, logs, goal);
@@ -297,19 +293,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _handleChartTap(Offset localPosition, Size size, List<DrinkLog> logs, double goal) {
     if (logs.isEmpty) return;
-
     const double leftMargin = 40.0;
     const double bottomPadding = 30.0;
     final double w = size.width - leftMargin;
     final double h = size.height - bottomPadding;
     final double maxVal = selectedTab == 0 ? 2450.0 : 1.81;
-
     int daysInMonth = DateUtils.getDaysInMonth(focusedDate.year, focusedDate.month);
     final double xStep = w / (selectedTab == 0 ? 24 : (selectedTab == 1 ? 6 : (daysInMonth - 1)));
-
     int? closestIndex;
     double minDistance = double.infinity;
-
     if (selectedTab == 0) {
       List<DrinkLog> sortedLogs = List.from(logs)..sort((a, b) => a.time.compareTo(b.time));
       double currentSum = 0;
@@ -317,20 +309,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
         currentSum += sortedLogs[i].amount;
         double x = leftMargin + (sortedLogs[i].time.hour + sortedLogs[i].time.minute / 60.0) * xStep;
         double y = h - (currentSum / maxVal * h);
-
         double distance = math.sqrt(math.pow(localPosition.dx - x, 2) + math.pow(localPosition.dy - y, 2));
         if (distance < minDistance) {
           minDistance = distance;
           closestIndex = i;
         }
       }
-    } else {
+    }
+    else {
       Map<int, double> dailyTotals = {};
       for (var log in logs) {
         int key = selectedTab == 1 ? (log.time.weekday % 7) : (log.time.day - 1);
         dailyTotals[key] = (dailyTotals[key] ?? 0) + log.amount;
       }
-
       dailyTotals.forEach((key, amount) {
         double x = leftMargin + key * xStep;
         double y = h - ((amount / 1000.0) / maxVal * h);
@@ -357,7 +348,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-
   Widget _buildRecordsHeader(BuildContext context, WaterController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 20, 12),
@@ -379,7 +369,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // Nếu đang sửa: Gắn lượng nước cũ vào. Nếu thêm mới: Để trống
     final textController = TextEditingController(text: logToEdit != null ? logToEdit.amount.toInt().toString() : "");
     bool isValidAmount = logToEdit != null ? true : false; // Nút save sẽ khóa nếu thêm mới mà chưa nhập gì
-
     final baseDate = focusedDate;
     final List<DateTime> dateRange = List.generate(11, (index) => baseDate.add(Duration(days: index - 5)));
     final List<String> daysLabels = dateRange.map((d) {
@@ -387,7 +376,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (DateFormat('yyyy-MM-dd').format(d) == DateFormat('yyyy-MM-dd').format(now)) return "Today";
       return DateFormat('MMM d').format(d);
     }).toList();
-
     final List<String> hours = List.generate(12, (i) => (i + 1).toString().padLeft(2, '0'));
     final List<String> minutes = List.generate(60, (i) => i.toString().padLeft(2, '0'));
     final List<String> periods = ["AM", "PM"];
@@ -402,7 +390,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (logToEdit != null) {
       int foundIdx = dateRange.indexWhere((d) => d.year == logToEdit.time.year && d.month == logToEdit.time.month && d.day == logToEdit.time.day);
       if (foundIdx != -1) selectedDayIdx = foundIdx;
-
       int h = logToEdit.time.hour;
       sHour = (h % 12 == 0 ? 12 : h % 12) - 1;
       sMin = logToEdit.time.minute;
@@ -413,7 +400,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final hourScrollController = FixedExtentScrollController(initialItem: sHour);
     final minScrollController = FixedExtentScrollController(initialItem: sMin);
     final periodScrollController = FixedExtentScrollController(initialItem: sPeriod);
-
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -686,14 +672,14 @@ class FlowChartPainter extends CustomPainter {
   final List<DrinkLog> logs;
   final int? selectedDotIndex;
   final int selectedTab;
-  final int daysInMonth; // THÊM BIẾN NHẬN SỐ NGÀY TỪ BÊN NGOÀI
+  final int daysInMonth;
 
   FlowChartPainter({
     required this.goal,
     required this.logs,
     this.selectedDotIndex,
     required this.selectedTab,
-    required this.daysInMonth // Yêu cầu biến này
+    required this.daysInMonth
   });
 
   @override
@@ -732,11 +718,9 @@ class FlowChartPainter extends CustomPainter {
         List<DrinkLog> sortedLogs = List.from(logs)..sort((a, b) => a.time.compareTo(b.time));
         List<Offset> points = [];
         double sum = 0;
-
         for (var log in sortedLogs) {
           double x = (log.time.hour + log.time.minute / 60.0) * xStep;
           if (points.isEmpty) points.add(Offset(x, h));
-
           sum += log.amount;
           double y = h - (sum / maxVal * h);
           points.add(Offset(x, y));
@@ -748,14 +732,11 @@ class FlowChartPainter extends CustomPainter {
           for (int i = 2; i < points.length; i++) {
             path.lineTo(points[i].dx, points[i].dy);
           }
-
           final Path areaPath = Path.from(path)..lineTo(points.last.dx, h)..lineTo(points[1].dx, h)..close();
           final Paint fillPaint = Paint()..shader = ui.Gradient.linear(Offset(0, h - (sum / maxVal * h)), Offset(0, h), [const Color(0xFF00CDE0), const Color(0xFF00CDE0)]);
           canvas.drawPath(areaPath, fillPaint);
-
           final Paint linePaint = Paint()..color = const Color(0xFF00CDE0)..strokeWidth = 3.5..style = ui.PaintingStyle.stroke;
           canvas.drawPath(path, linePaint);
-
           for (int i = 1; i < points.length; i++) {
             canvas.drawCircle(points[i], 5, dotOutline);
             canvas.drawCircle(points[i], 5, dotPaint);
@@ -842,7 +823,6 @@ class FlowChartPainter extends CustomPainter {
       startX += dashWidth + dashSpace;
     }
   }
-
   bool shouldReclip(CustomClipper oldClipper) => false;
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;

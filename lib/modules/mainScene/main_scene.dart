@@ -196,7 +196,7 @@ class MainScene extends StatelessWidget {
 
     return Obx(() {
       // Ưu tiên 1 - Công tắc tổng đang tắt
-      if (reminderController.isMasterOn.value == false) {
+      if (!reminderController.isMasterOn.value) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -214,8 +214,31 @@ class MainScene extends StatelessWidget {
         );
       }
 
+      // Trường hợp không có báo thức nào được bật
+      if (reminderController.nextReminderTime.value == "No Alarms") {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              "No Alarms Scheduled",
+              style: GoogleFonts.workSans(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: mainTextColor,
+              ),
+            ),
+            _buildEditButton(),
+          ],
+        );
+      }
+
       // Ưu tiên 2 - Đã hoàn thành mục tiêu (Lấy % từ WaterController, check Stop từ ReminderController)
       if (waterController.percentage >= 1.0 && reminderController.stopWhenGoalAchieved.value == true) {
+        // Biến nextReminderTime lúc này đang có dạng "Goal Met! Next: 08:00 AM" (theo logic ở Controller)
+        // Mình sẽ cắt bỏ phần chữ thừa để lấy đúng cái giờ "08:00 AM" ghép vào chữ Tomorrow
+        String timeStr = reminderController.nextReminderTime.value.replaceAll("Goal Met! Next: ", "");
+
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -224,7 +247,7 @@ class MainScene extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  "Next Reminder: Tomorrow", // Bạn có thể update logic lấy ngày mai vào đây sau
+                  "Next Reminder: Tomorrow $timeStr",
                   style: GoogleFonts.workSans(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -238,15 +261,15 @@ class MainScene extends StatelessWidget {
             Text(
               "Great job! You've reached your goal today!",
               style: GoogleFonts.workSans(
-                fontSize: 12,
-                color: Color(0xFF5B616D)
+                  fontSize: 12,
+                  color: const Color(0xFF5B616D)
               ),
             ),
           ],
         );
       }
 
-      // Ưu tiên 3 - Trạng thái bình thường
+      // Ưu tiên 3 - Trạng thái bình thường (Đang chạy đếm ngược)
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -255,7 +278,7 @@ class MainScene extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "Next Reminder: 11:00 AM", // Chỗ này sau sẽ nối với logic đếm giờ thực tế của ReminderController
+                "Next Reminder: ${reminderController.nextReminderTime.value}",
                 style: GoogleFonts.workSans(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -267,7 +290,7 @@ class MainScene extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            "(4h32 min left)", // Chỗ này sau sẽ nối với logic đếm ngược thực tế
+            reminderController.timeLeft.value,
             style: GoogleFonts.workSans(
               fontSize: 12,
               color: subTextColor,

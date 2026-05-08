@@ -12,7 +12,6 @@ class StandardReminder {
   final String name;
   final RxString time;
   final RxBool isEnabled;
-
   StandardReminder({required this.name, required String time, bool isEnabled = true})
       : time = time.obs,
         isEnabled = isEnabled.obs;
@@ -24,19 +23,15 @@ class StandardReminder {
 class CustomTime {
   final RxString time;
   final RxBool isEnabled;
-
   CustomTime({required String time, bool isEnabled = true})
       : time = time.obs,
         isEnabled = isEnabled.obs;
-
   Map<String, dynamic> toJson() => {'time': time.value, 'isEnabled': isEnabled.value};
   factory CustomTime.fromJson(Map<String, dynamic> json) => CustomTime(time: json['time'], isEnabled: json['isEnabled']);
 }
 
 class ReminderController extends GetxController {
   final box = GetStorage();
-
-  // 1. Công tắc tổng & Chế độ
   var isMasterOn = true.obs;
   var currentMode = 0.obs;
   var tempSelectedMode = 0.obs;
@@ -49,20 +44,16 @@ class ReminderController extends GetxController {
   // DANH SÁCH GIỜ CỦA CÁC CHẾ ĐỘ
   final standardReminders = <StandardReminder>[].obs;
   final weekendStandardReminders = <StandardReminder>[].obs;
-
   var intervalDuration = "1 hour 30 min".obs;
   var bedtimeStart = "11:00 PM".obs;
   var bedtimeEnd = "08:00 AM".obs;
-
   var weekendIntervalDuration = "2 hours".obs;
   var weekendBedtimeStart = "11:00 PM".obs;
   var weekendBedtimeEnd = "08:00 AM".obs;
-
   var customTimes = <CustomTime>[].obs;
+  var weekendCustomTimes = <CustomTime>[].obs;
 
-  // ==========================================
   // CÀI ĐẶT CHUNG (Footer)
-  // ==========================================
   var isWeekendModeOn = false.obs;
   var stopWhenGoalAchieved = true.obs;
   var isSmartSkipOn = true.obs;
@@ -82,17 +73,14 @@ class ReminderController extends GetxController {
   Future<void> toggleMasterSwitch(bool value) async {
     if (value) {
       PermissionStatus status = await Permission.notification.status;
-
       if (status.isPermanentlyDenied) {
         isMasterOn.value = false;
         await openAppSettings();
         return;
       }
-
       if (!status.isGranted) {
         status = await Permission.notification.request();
       }
-
       if (status.isGranted) {
         isMasterOn.value = true;
       } else {
@@ -101,7 +89,6 @@ class ReminderController extends GetxController {
     } else {
       isMasterOn.value = false;
     }
-
     _saveToDisk();
     calculateNextReminder();
     _updateScheduledNotifications();
@@ -112,13 +99,11 @@ class ReminderController extends GetxController {
     super.onInit();
     _loadData();
     _setupAutoSave();
-
     calculateNextReminder();
     _updateScheduledNotifications();
-
     _timer = Timer.periodic(const Duration(seconds: 10), (_) => calculateNextReminder());
 
-    // [MỚI] LẮNG NGHE LƯỢNG NƯỚC UỐNG ĐỂ CẬP NHẬT LẠI BÁO THỨC NGAY LẬP TỨC
+    //LẮNG NGHE LƯỢNG NƯỚC UỐNG ĐỂ CẬP NHẬT LẠI BÁO THỨC NGAY LẬP TỨC
     try {
       final waterCtrl = Get.find<WaterController>();
       ever(waterCtrl.totalWater, (_) {
@@ -141,7 +126,6 @@ class ReminderController extends GetxController {
     DateTime now = DateTime.now();
     List<DateTime> allActiveTimes = [];
     bool isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
-
     if (currentMode.value == 0) {
       var activeList = (isWeekend && isWeekendModeOn.value) ? weekendStandardReminders : standardReminders;
       for (var item in activeList) {
@@ -152,11 +136,9 @@ class ReminderController extends GetxController {
       String dur = (isWeekend && isWeekendModeOn.value) ? weekendIntervalDuration.value : intervalDuration.value;
       String bStart = (isWeekend && isWeekendModeOn.value) ? weekendBedtimeStart.value : bedtimeStart.value;
       String bEnd = (isWeekend && isWeekendModeOn.value) ? weekendBedtimeEnd.value : bedtimeEnd.value;
-
       DateTime start = _parseTime(bEnd);
       DateTime end = _parseTime(bStart);
       if (end.isBefore(start)) end = end.add(const Duration(days: 1));
-
       Duration step = _parseDurationStr(dur);
       if (step.inMinutes > 0) {
         DateTime current = start;
@@ -167,27 +149,24 @@ class ReminderController extends GetxController {
       }
     }
     else if (currentMode.value == 2) {
-      for (var item in customTimes) {
+      var activeList = (isWeekend && isWeekendModeOn.value) ? weekendCustomTimes : customTimes;
+      for (var item in activeList) {
         if (item.isEnabled.value) allActiveTimes.add(_parseTime(item.time.value));
       }
     }
-
     return allActiveTimes.toSet().toList();
   }
 
   // NẠP BÁO THỨC VÀO HỆ ĐIỀU HÀNH (ĐÃ THÊM LOGIC SKIP GOAL)
   Future<void> _updateScheduledNotifications() async {
     await NotificationService().cancelAll();
-
     if (!isMasterOn.value) return;
-
     List<DateTime> activeTimes = _getActiveTimes();
     DateTime now = DateTime.now();
 
     // NẾU BẬT CÔNG TẮC & ĐÃ UỐNG ĐỦ -> CỜ "BỎ QUA HÔM NAY" = TRUE
     bool skipToday = stopWhenGoalAchieved.value && _isGoalMet;
     int idCounter = 0;
-
     for (var time in activeTimes) {
       DateTime scheduleTime = time;
 
@@ -200,7 +179,6 @@ class ReminderController extends GetxController {
       if (skipToday && scheduleTime.day == now.day) {
         scheduleTime = scheduleTime.add(const Duration(days: 1));
       }
-
       await NotificationService().scheduleDailyNotification(
         idCounter,
         scheduleTime, // Bắt buộc NotificationService phải được sửa để nhận biến DateTime
@@ -214,19 +192,15 @@ class ReminderController extends GetxController {
   String getWeekdayIntervalText() {
     return _generateIntervalText(intervalDuration.value, bedtimeEnd.value, bedtimeStart.value);
   }
-
   String getWeekendIntervalText() {
     return _generateIntervalText(weekendIntervalDuration.value, weekendBedtimeEnd.value, weekendBedtimeStart.value);
   }
-
   String _generateIntervalText(String durationStr, String startStr, String endStr) {
     DateTime start = _parseTime(startStr);
     DateTime end = _parseTime(endStr);
     if (end.isBefore(start)) end = end.add(const Duration(days: 1));
-
     Duration step = _parseDurationStr(durationStr);
     List<String> times = [];
-
     if (step.inMinutes > 0) {
       DateTime current = start;
       while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
@@ -244,18 +218,14 @@ class ReminderController extends GetxController {
       timeLeft.value = "";
       return;
     }
-
     List<DateTime> allActiveTimes = _getActiveTimes();
-
     if (allActiveTimes.isEmpty) {
       nextReminderTime.value = "No Alarms";
       timeLeft.value = "";
       return;
     }
-
     DateTime now = DateTime.now();
     bool skipToday = stopWhenGoalAchieved.value && _isGoalMet;
-
     List<DateTime> validTimes = [];
     for (var t in allActiveTimes) {
       DateTime scheduleTime = t;
@@ -267,7 +237,6 @@ class ReminderController extends GetxController {
       }
       validTimes.add(scheduleTime);
     }
-
     validTimes.sort();
     DateTime nextTime = validTimes.first;
 
@@ -277,14 +246,12 @@ class ReminderController extends GetxController {
     } else {
       nextReminderTime.value = DateFormat("hh:mm a").format(nextTime);
     }
-
     Duration diff = nextTime.difference(now);
     int hours = diff.inHours;
     int minutes = diff.inMinutes % 60;
     timeLeft.value = "(${hours > 0 ? '${hours}h ' : ''}${minutes.toString().padLeft(2, '0')} min left)";
   }
 
-  // --- Parser ---
   DateTime _parseTime(String timeStr) {
     try {
       final time = DateFormat("hh:mm a").parse(timeStr);
@@ -299,7 +266,6 @@ class ReminderController extends GetxController {
     int hours = 0;
     int mins = 0;
     String lower = durStr.toLowerCase();
-
     if (lower.contains("hour")) {
       var parts = lower.split("hour");
       hours = int.tryParse(parts[0].replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
@@ -314,25 +280,20 @@ class ReminderController extends GetxController {
     }
     return Duration(hours: hours, minutes: mins);
   }
-
   // LƯU TRỮ VÀ TẢI DỮ LIỆU
   void _loadData() {
     isMasterOn.value = box.read('isMasterOn') ?? true;
     currentMode.value = box.read('currentMode') ?? 0;
-
     intervalDuration.value = box.read('intervalDuration') ?? "1 hour 30 min";
     bedtimeStart.value = box.read('bedtimeStart') ?? "11:00 PM";
     bedtimeEnd.value = box.read('bedtimeEnd') ?? "08:00 AM";
-
     weekendIntervalDuration.value = box.read('weekendIntervalDuration') ?? "2 hours";
     weekendBedtimeStart.value = box.read('weekendBedtimeStart') ?? "11:00 PM";
     weekendBedtimeEnd.value = box.read('weekendBedtimeEnd') ?? "08:00 AM";
-
     isWeekendModeOn.value = box.read('isWeekendModeOn') ?? false;
     stopWhenGoalAchieved.value = box.read('stopWhenGoalAchieved') ?? true;
     isSmartSkipOn.value = box.read('isSmartSkipOn') ?? true;
     smartSkipDuration.value = box.read('smartSkipDuration') ?? "1 hour";
-
     List? storedStandard = box.read('standardReminders');
     if (storedStandard != null) {
       standardReminders.value = storedStandard.map((e) => StandardReminder.fromJson(e)).toList();
@@ -348,7 +309,6 @@ class ReminderController extends GetxController {
         StandardReminder(name: 'Before Sleep', time: '10:00 PM'),
       ]);
     }
-
     List? storedWeekend = box.read('weekendStandardReminders');
     if (storedWeekend != null) {
       weekendStandardReminders.value = storedWeekend.map((e) => StandardReminder.fromJson(e)).toList();
@@ -364,7 +324,6 @@ class ReminderController extends GetxController {
         StandardReminder(name: 'Before Sleep', time: '11:00 PM'),
       ]);
     }
-
     List? storedCustom = box.read('customTimes');
     if (storedCustom != null) {
       customTimes.value = storedCustom.map((e) => CustomTime.fromJson(e)).toList();
@@ -384,6 +343,12 @@ class ReminderController extends GetxController {
         CustomTime(time: '11:00 PM', isEnabled: false),
       ]);
     }
+    List? storedWeekendCustom = box.read('weekendCustomTimes');
+    if (storedWeekendCustom != null) {
+      weekendCustomTimes.value = storedWeekendCustom.map((e) => CustomTime.fromJson(e)).toList();
+    } else {
+      weekendCustomTimes.addAll(customTimes.map((e) => CustomTime(time: e.time.value, isEnabled: e.isEnabled.value)));
+    }
   }
 
   void _setupAutoSave() {
@@ -396,10 +361,10 @@ class ReminderController extends GetxController {
       calculateNextReminder();
       _updateScheduledNotifications();
     });
-
     for (var item in standardReminders) { ever(item.isEnabled, (_) { _saveToDisk(); calculateNextReminder(); _updateScheduledNotifications(); }); ever(item.time, (_) { _saveToDisk(); calculateNextReminder(); _updateScheduledNotifications(); }); }
     for (var item in weekendStandardReminders) { ever(item.isEnabled, (_) { _saveToDisk(); calculateNextReminder(); _updateScheduledNotifications(); }); ever(item.time, (_) { _saveToDisk(); calculateNextReminder(); _updateScheduledNotifications(); }); }
     for (var item in customTimes) { ever(item.isEnabled, (_) { _saveToDisk(); calculateNextReminder(); _updateScheduledNotifications(); }); ever(item.time, (_) { _saveToDisk(); calculateNextReminder(); _updateScheduledNotifications(); }); }
+    for (var item in weekendCustomTimes) { ever(item.isEnabled, (_) { _saveToDisk(); calculateNextReminder(); _updateScheduledNotifications(); }); ever(item.time, (_) { _saveToDisk(); calculateNextReminder(); _updateScheduledNotifications(); }); }
   }
 
   void _saveToDisk() {
@@ -415,10 +380,10 @@ class ReminderController extends GetxController {
     box.write('stopWhenGoalAchieved', stopWhenGoalAchieved.value);
     box.write('isSmartSkipOn', isSmartSkipOn.value);
     box.write('smartSkipDuration', smartSkipDuration.value);
-
     box.write('standardReminders', standardReminders.map((e) => e.toJson()).toList());
     box.write('weekendStandardReminders', weekendStandardReminders.map((e) => e.toJson()).toList());
     box.write('customTimes', customTimes.map((e) => e.toJson()).toList());
+    box.write('weekendCustomTimes', weekendCustomTimes.map((e) => e.toJson()).toList());
   }
 
   void saveMode() {
@@ -435,13 +400,7 @@ class ReminderController extends GetxController {
     }
   }
 
-  void addCustomTime(BuildContext context) async {
-    var newItem = CustomTime(time: "08:00 AM".obs.value);
-    customTimes.add(newItem);
-
-    ever(newItem.time, (_) { _saveToDisk(); calculateNextReminder(); _updateScheduledNotifications();});
-    ever(newItem.isEnabled, (_) { _saveToDisk(); calculateNextReminder(); _updateScheduledNotifications();});
-
+  void refreshData() {
     _saveToDisk();
     calculateNextReminder();
     _updateScheduledNotifications();

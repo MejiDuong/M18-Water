@@ -88,7 +88,7 @@ class ReminderScreen extends StatelessWidget {
                             endObs: controller.weekendBedtimeEnd,
                             descriptionTimes: controller.getWeekendIntervalText(),
                           )
-                              : const SizedBox(),
+                              : _buildCustomModeUI(context, controller, controller.weekendCustomTimes, true, primaryCyan, mainText, subText),
                         ),
                       ],
                     ),
@@ -152,13 +152,12 @@ class ReminderScreen extends StatelessWidget {
           descriptionTimes: controller.getWeekdayIntervalText(),
         );
       case 2:
-        return _buildCustomMode(context, controller, primaryCyan, mainText, subText);
+        return _buildCustomModeUI(context, controller, controller.customTimes, false, primaryCyan, mainText, subText);
       default:
         return const SizedBox();
     }
   }
 
-  // --- HÀM TÁI SỬ DỤNG CHO STANDARD (NỐI BOTTOM SHEET MỚI) ---
   Widget _buildStandardListUI(BuildContext context, ReminderController controller, List<StandardReminder> listToRender, Color primaryCyan, Color mainText) {
     return Column(
       children: listToRender.asMap().entries.map((entry) {
@@ -173,7 +172,6 @@ class ReminderScreen extends StatelessWidget {
             children: [
               Expanded(child: Text(reminder.name, style: TextStyle(color: mainText, fontSize: 16, fontWeight: FontWeight.w500))),
               GestureDetector(
-                // ĐÃ SỬA: DÙNG BOTTOM SHEET CHỌN GIỜ IOS
                 onTap: () => _showTimePickerBottomSheet(context, controller, reminder.name, reminder.time, primaryCyan),
                 child: Row(
                   children: [
@@ -194,7 +192,6 @@ class ReminderScreen extends StatelessWidget {
     );
   }
 
-  // --- HÀM TÁI SỬ DỤNG CHO INTERVAL CỤC (NỐI BOTTOM SHEET MỚI) ---
   Widget _buildIntervalBlock({
     required BuildContext context,
     required ReminderController controller,
@@ -218,7 +215,6 @@ class ReminderScreen extends StatelessWidget {
               children: [
                 Text("Interval", style: TextStyle(color: mainText, fontSize: 16, fontWeight: FontWeight.w500)),
                 GestureDetector(
-                  // ĐÃ SỬA: TÁI SỬ DỤNG BOTTOM SHEET CỦA SMART SKIP CHO INTERVAL
                   onTap: () => _showDurationPickerBottomSheet(context, controller, "Interval", intervalObs, primaryCyan),
                   child: Row(
                     children: [
@@ -240,7 +236,6 @@ class ReminderScreen extends StatelessWidget {
               children: [
                 Expanded(child: Text("Bedtime", style: TextStyle(color: mainText, fontSize: 16, fontWeight: FontWeight.w500))),
                 GestureDetector(
-                  // ĐÃ SỬA: DÙNG BOTTOM SHEET CHỌN GIỜ IOS
                   onTap: () => _showTimePickerBottomSheet(context, controller, "Sleep time start", startObs, primaryCyan),
                   child: Row(
                     children: [
@@ -255,7 +250,6 @@ class ReminderScreen extends StatelessWidget {
                   child: Text("to", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
                 ),
                 GestureDetector(
-                  // ĐÃ SỬA: DÙNG BOTTOM SHEET CHỌN GIỜ IOS
                   onTap: () => _showTimePickerBottomSheet(context, controller, "Sleep time end", endObs, primaryCyan),
                   child: Row(
                     children: [
@@ -291,8 +285,7 @@ class ReminderScreen extends StatelessWidget {
     );
   }
 
-  // --- CUSTOM MODE UI (NỐI BOTTOM SHEET MỚI) ---
-  Widget _buildCustomMode(BuildContext context, ReminderController controller, Color primaryCyan, Color mainText, Color subText) {
+  Widget _buildCustomModeUI(BuildContext context, ReminderController controller, List<CustomTime> listToRender, bool isWeekend, Color primaryCyan, Color mainText, Color subText) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Column(
@@ -304,46 +297,65 @@ class ReminderScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Time (12/30)", style: TextStyle(color: mainText, fontSize: 14, fontWeight: FontWeight.w500)),
+                  Obx(() => Text("Time (${listToRender.length}/30)", style: TextStyle(color: mainText, fontSize: 14, fontWeight: FontWeight.w500))),
                   const SizedBox(height: 2),
                   Text("Hold the tag to edit", style: TextStyle(color: subText, fontSize: 12)),
                 ],
               ),
               Obx(() {
-                int selectedCount = controller.customTimes.where((e) => e.isEnabled.value).length;
+                int selectedCount = listToRender.where((e) => e.isEnabled.value).length;
                 return Text("$selectedCount Selected", style: TextStyle(color: subText, fontSize: 14));
               }),
             ],
           ),
           const SizedBox(height: 16),
           Obx(() => Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              ...controller.customTimes.map((item) {
-                return Obx(() => GestureDetector(
-                  onTap: () => item.isEnabled.value = !item.isEnabled.value,
-                  // ĐÃ SỬA: DÙNG BOTTOM SHEET CHỌN GIỜ IOS
-                  onLongPress: () => _showTimePickerBottomSheet(context, controller, "Edit Time", item.time, primaryCyan),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: item.isEnabled.value ? primaryCyan : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: item.isEnabled.value ? primaryCyan : Colors.grey.shade300),
+              ...listToRender.map((item) {
+                return Obx(() {
+                  bool isOn = item.isEnabled.value;
+                  return GestureDetector(
+                    onTap: () {
+                      item.isEnabled.value = !item.isEnabled.value;
+                      controller.refreshData(); // Lưu và nạp lại báo thức
+                    },
+                    onLongPress: () => _showTimerBottomSheet(context, controller, primaryCyan, existingItem: item, isWeekend: isWeekend),
+                    child: Container(
+                      width: 100,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isOn ? primaryCyan : const Color(0xFFF2F2F7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                          item.time.value,
+                          style: TextStyle(
+                              color: isOn ? Colors.white : const Color(0xFF8E8E93),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600
+                          )
+                      ),
                     ),
-                    child: Text(item.time.value, style: TextStyle(color: item.isEnabled.value ? Colors.white : Colors.grey.shade600, fontSize: 14, fontWeight: FontWeight.w500)),
-                  ),
-                ));
+                  );
+                });
               }),
-              GestureDetector(
-                onTap: () => controller.addCustomTime(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade300)),
-                  child: const Icon(Icons.add, color: Colors.grey, size: 18),
+              if (listToRender.length < 30)
+                GestureDetector(
+                  onTap: () => _showTimerBottomSheet(context, controller, primaryCyan, isWeekend: isWeekend),
+                  child: Container(
+                    width: 100,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F2F7),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.add, color: Color(0xFF8E8E93), size: 18),
+                  ),
                 ),
-              ),
             ],
           )),
         ],
@@ -351,7 +363,6 @@ class ReminderScreen extends StatelessWidget {
     );
   }
 
-  // --- FOOTER UI (Skip & Stop) ---
   Widget _buildFooter(BuildContext context, ReminderController controller, Color primaryCyan, Color mainText, Color subText) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,7 +385,6 @@ class ReminderScreen extends StatelessWidget {
                   children: [
                     Expanded(child: Text("Smart Skip", style: TextStyle(color: mainText, fontSize: 16, fontWeight: FontWeight.w500))),
                     GestureDetector(
-                      // GỌI BOTTOM SHEET Ở ĐÂY
                       onTap: () => _showDurationPickerBottomSheet(context, controller, "Smart Skip", controller.smartSkipDuration, primaryCyan, isSmartSkip: true),
                       child: Row(
                         children: [
@@ -397,12 +407,11 @@ class ReminderScreen extends StatelessWidget {
       ],
     );
   }
-  // GIAO DIỆN BOTTOM SHEET CHỌN DURATION (DÙNG CHUNG SMART SKIP & INTERVAL)
+
   void _showDurationPickerBottomSheet(BuildContext context, ReminderController controller, String title, RxString targetObs, Color primaryCyan, {bool isSmartSkip = false}) {
     bool tempIsOn = isSmartSkip ? controller.isSmartSkipOn.value : true;
     String tempDuration = targetObs.value;
 
-    // Tự động load danh sách gợi ý phù hợp (Interval hay SmartSkip)
     final List<String> options = isSmartSkip
         ? ["50 min", "1 hour", "1.5 hours", "2 hours", "2.5 hours", "3 hours"]
         : ["30 min", "1 hour", "1.5 hours", "2 hours", "3 hours", "4 hours"];
@@ -473,7 +482,6 @@ class ReminderScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
 
-                    // MÔ TẢ ĐỘNG (Chỉ hiện cho Smart Skip)
                     if (isSmartSkip)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 32),
@@ -511,7 +519,7 @@ class ReminderScreen extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: () {
                               if (isSmartSkip) controller.isSmartSkipOn.value = tempIsOn;
-                              targetObs.value = tempDuration; // LƯU VÀO BIẾN THẬT
+                              targetObs.value = tempDuration;
                               Get.back();
                             },
                             style: ElevatedButton.styleFrom(
@@ -535,7 +543,6 @@ class ReminderScreen extends StatelessWidget {
     );
   }
 
-  // GIAO DIỆN BOTTOM SHEET CHỌN GIỜ (GIỐNG HỆT ẢNH THIẾT KẾ)
   void _showTimePickerBottomSheet(BuildContext context, ReminderController controller, String title, RxString timeObs, Color primaryCyan) {
     List<String> parts = timeObs.value.split(' ');
     List<String> hm = parts[0].split(':');
@@ -565,7 +572,7 @@ class ReminderScreen extends StatelessWidget {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 ),
                 child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -679,6 +686,212 @@ class ReminderScreen extends StatelessWidget {
         Text(title, style: TextStyle(color: mainText, fontSize: 16, fontWeight: FontWeight.w500)),
         Obx(() => Switch(value: obsValue.value, onChanged: (val) => obsValue.value = val, activeTrackColor: primaryCyan)),
       ],
+    );
+  }
+
+  // GIAO DIỆN BOTTOM SHEET TIMER (CÓ BẮT LỖI)
+  void _showTimerBottomSheet(BuildContext context, ReminderController controller, Color primaryCyan, {CustomTime? existingItem, bool isWeekend = false}) {
+    String initialTime = existingItem != null ? existingItem.time.value : "08:00 AM";
+    List<String> parts = initialTime.split(' ');
+    List<String> hm = parts[0].split(':');
+    int tempHour = int.parse(hm[0]);
+    int tempMin = int.parse(hm[1]);
+    String tempAmPm = parts.length > 1 ? parts[1] : "AM";
+
+    final List<String> hoursList = List.generate(12, (index) => (index + 1).toString().padLeft(2, '0'));
+    final List<String> minutesList = List.generate(60, (index) => index.toString().padLeft(2, '0'));
+    final List<String> amPmList = ["AM", "PM"];
+
+    int tempHourIndex = tempHour - 1;
+    int tempMinIndex = tempMin;
+    int tempAmPmIndex = tempAmPm == "AM" ? 0 : 1;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+            builder: (context, setState) {
+              return Container(
+                padding: const EdgeInsets.all(24),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Timer", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
+                        // NÚT THÙNG RÁC (CÓ LOGIC CHẶN XÓA HẾT)
+                        InkWell(
+                          onTap: () {
+                            if (existingItem != null) {
+                              var targetList = isWeekend ? controller.weekendCustomTimes : controller.customTimes;
+
+                              // [MỚI] CHẶN NẾU CHỈ CÒN ĐÚNG 1 CÁI BÁO THỨC
+                              if (targetList.length <= 1) {
+                                Get.back();
+                                _showCustomError("You cannot delete all alarms. Please add more.");
+                                return; // Dừng lại, không xóa
+                              }
+
+                              targetList.remove(existingItem);
+                              controller.refreshData();
+                            }
+                            Get.back();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: const Icon(Icons.delete_outline, color: Colors.black87, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      height: 150,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            height: 45,
+                            width: 220,
+                            decoration: BoxDecoration(
+                                border: Border.symmetric(horizontal: BorderSide(color: Colors.grey.shade200, width: 1.5))
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 60,
+                                child: CupertinoPicker(
+                                  scrollController: FixedExtentScrollController(initialItem: tempHourIndex),
+                                  itemExtent: 45,
+                                  selectionOverlay: null,
+                                  onSelectedItemChanged: (index) => setState(() => tempHourIndex = index),
+                                  children: hoursList.asMap().entries.map((entry) {
+                                    bool isSelected = entry.key == tempHourIndex;
+                                    return Center(child: Text(entry.value, style: TextStyle(fontSize: 20, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? primaryCyan : Colors.grey.shade400)));
+                                  }).toList(),
+                                ),
+                              ),
+                              Text(" : ", style: TextStyle(color: primaryCyan, fontSize: 24, fontWeight: FontWeight.bold)),
+                              SizedBox(
+                                width: 60,
+                                child: CupertinoPicker(
+                                  scrollController: FixedExtentScrollController(initialItem: tempMinIndex),
+                                  itemExtent: 45,
+                                  selectionOverlay: null,
+                                  onSelectedItemChanged: (index) => setState(() => tempMinIndex = index),
+                                  children: minutesList.asMap().entries.map((entry) {
+                                    bool isSelected = entry.key == tempMinIndex;
+                                    return Center(child: Text(entry.value, style: TextStyle(fontSize: 20, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? primaryCyan : Colors.grey.shade400)));
+                                  }).toList(),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                width: 60,
+                                child: CupertinoPicker(
+                                  scrollController: FixedExtentScrollController(initialItem: tempAmPmIndex),
+                                  itemExtent: 45,
+                                  selectionOverlay: null,
+                                  onSelectedItemChanged: (index) => setState(() => tempAmPmIndex = index),
+                                  children: amPmList.asMap().entries.map((entry) {
+                                    bool isSelected = entry.key == tempAmPmIndex;
+                                    return Center(child: Text(entry.value, style: TextStyle(fontSize: 20, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? primaryCyan : Colors.grey.shade400)));
+                                  }).toList(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Get.back(),
+                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), side: BorderSide(color: primaryCyan, width: 1.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                            child: Text("Cancel", style: TextStyle(color: primaryCyan, fontSize: 16, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // NÚT SAVE (CÓ LOGIC CHẶN TRÙNG LẶP)
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              String finalTime = "${hoursList[tempHourIndex]}:${minutesList[tempMinIndex]} ${amPmList[tempAmPmIndex]}";
+                              var targetList = isWeekend ? controller.weekendCustomTimes : controller.customTimes;
+                              bool isDuplicate = targetList.any((e) => e.time.value == finalTime && e != existingItem);
+                              if (isDuplicate) {
+                                Get.back();
+                                _showCustomError("This alarm is already set.");
+                                return; // Dừng lại, không cho save
+                              }
+                              if (existingItem != null) {
+                                existingItem.time.value = finalTime;
+                              } else {
+                                var newItem = CustomTime(time: finalTime, isEnabled: true);
+                                targetList.add(newItem);
+                              }
+                              controller.refreshData();
+                              Get.back();
+                            },
+                            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), backgroundColor: primaryCyan, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                            child: const Text("Save", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              );
+            }
+        );
+      },
+    );
+  }
+
+  void _showCustomError(String message) {
+    if (Get.isSnackbarOpen) {
+      Get.closeAllSnackbars();
+    }
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          const Icon(Icons.cancel, color: Color(0xFFF44336), size: 24), // Icon tròn đỏ có dấu x
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: Colors.white,
+      borderRadius: 30,
+      margin: const EdgeInsets.only(top: 16, left: 16, right: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      snackPosition: SnackPosition.TOP,
+      borderColor: const Color(0xFFF44336),
+      borderWidth: 1.5,
+      boxShadows: [const BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
+      duration: const Duration(seconds: 3),
     );
   }
 }

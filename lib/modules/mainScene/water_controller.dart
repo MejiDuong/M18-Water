@@ -7,18 +7,21 @@ class DrinkLog {
   final DateTime time;
   DrinkLog({required this.amount, required this.time});
 
-  // Biến data thành chuỗi để lưu vào ổ cứng
   Map<String, dynamic> toJson() => {'amount': amount, 'time': time.toIso8601String()};
-  // Dịch chuỗi từ ổ cứng ra lại data
   factory DrinkLog.fromJson(Map<String, dynamic> json) => DrinkLog(amount: json['amount'], time: DateTime.parse(json['time']));
 }
 
 class WaterController extends GetxController {
-  final box = GetStorage(); // Hộp lưu trữ
+  final box = GetStorage();
 
   var totalWater = 0.0.obs;
   var goalWater = 2000.0.obs;
+
+  // Kho 1: Chỉ chứa nước hôm nay (Reset mỗi ngày)
   var dailyLogs = <DrinkLog>[].obs;
+
+  // Kho 2: Chứa nước từ cổ chí kim (Không bao giờ reset)
+  var historyLogs = <DrinkLog>[].obs;
 
   var selectedLogIndex = (-1).obs;
   var currentTab = 0.obs;
@@ -27,7 +30,6 @@ class WaterController extends GetxController {
 
   double get percentage => (totalWater.value / goalWater.value);
 
-  // ... (Giữ nguyên hàm dayChartData) ...
   List<double> get dayChartData {
     List<double> hourlyIntake = List.filled(25, 0.0);
     for (var log in dailyLogs) {
@@ -47,7 +49,7 @@ class WaterController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadData(); // Tự động load dữ liệu khi mở app
+    _loadData();
   }
 
   @override
@@ -57,20 +59,27 @@ class WaterController extends GetxController {
   }
 
   // ==========================================
-  // LOGIC LƯU TRỮ VÀ LOAD DỮ LIỆU
+  // LOGIC LƯU TRỮ VÀ LOAD DỮ LIỆU ĐÃ FIX LỖI
   // ==========================================
   void _loadData() {
     String todayStr = "${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}";
     String? lastSavedDate = box.read('lastDate');
 
-    // Nếu sang ngày mới -> Reset sạch sẽ
+    // 1. Luôn luôn load lịch sử vĩnh cửu (History) trước
+    List? storedHistory = box.read('historyLogs');
+    if (storedHistory != null) {
+      historyLogs.value = storedHistory.map((e) => DrinkLog.fromJson(e)).toList();
+    }
+
+    // 2. Kiểm tra ngày mới
     if (lastSavedDate != todayStr) {
+      // Ngày mới -> Reset kho Hôm Nay, NHƯNG giữ nguyên kho History
       totalWater.value = 0.0;
       dailyLogs.clear();
       box.write('lastDate', todayStr);
       _saveToDisk();
     } else {
-      // Nếu vẫn là hôm nay -> Load lại dữ liệu cũ
+      // Vẫn là hôm nay -> Load lại kho Hôm Nay
       totalWater.value = box.read('totalWater') ?? 0.0;
       List? storedLogs = box.read('dailyLogs');
       if (storedLogs != null) {
@@ -82,13 +91,18 @@ class WaterController extends GetxController {
   void _saveToDisk() {
     box.write('totalWater', totalWater.value);
     box.write('dailyLogs', dailyLogs.map((e) => e.toJson()).toList());
+    box.write('historyLogs', historyLogs.map((e) => e.toJson()).toList()); // Lưu thêm history
   }
 
-  // CÁC HÀM XỬ LÝ (Có gọi thêm hàm lưu)
   void addWater(double amount) {
     totalWater.value += amount;
-    dailyLogs.add(DrinkLog(amount: amount, time: DateTime.now()));
-    _saveToDisk(); // LƯU SAU KHI UỐNG
+    var newLog = DrinkLog(amount: amount, time: DateTime.now());
+
+    // Thêm vào cả 2 kho
+    dailyLogs.add(newLog);
+    historyLogs.add(newLog);
+
+    _saveToDisk();
 
     Future.delayed(const Duration(milliseconds: 100), () {
       if (scrollController.hasClients) {
@@ -99,14 +113,20 @@ class WaterController extends GetxController {
 
   void removeLog(int index) {
     if (index >= 0 && index < dailyLogs.length) {
-      totalWater.value -= dailyLogs[index].amount;
+      var logToRemove = dailyLogs[index];
+      totalWater.value -= logToRemove.amount;
+
+      // Xóa khỏi kho Hôm nay
       dailyLogs.removeAt(index);
+
+      // Đồng bộ xóa luôn ở kho History (dựa vào thời gian uống)
+      historyLogs.removeWhere((element) => element.time == logToRemove.time);
+
       selectedLogIndex.value = -1;
-      _saveToDisk(); // LƯU SAU KHI XÓA
+      _saveToDisk();
     }
   }
 
-  // ... (Giữ nguyên các hàm selectLog, changeTab) ...
   void selectLog(int index, double screenWidth) {
     if (selectedLogIndex.value == index) {
       selectedLogIndex.value = -1;
