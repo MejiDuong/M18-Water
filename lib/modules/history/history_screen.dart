@@ -833,7 +833,6 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback? onTap;
-
   const _NavItem({
     required this.svgPath,
     required this.label,

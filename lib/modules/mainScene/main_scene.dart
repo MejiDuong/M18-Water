@@ -236,7 +236,6 @@ class MainScene extends StatelessWidget {
       // Ưu tiên 2 - Đã hoàn thành mục tiêu (Lấy % từ WaterController, check Stop từ ReminderController)
       if (waterController.percentage >= 1.0 && reminderController.stopWhenGoalAchieved.value == true) {
         // Biến nextReminderTime lúc này đang có dạng "Goal Met! Next: 08:00 AM" (theo logic ở Controller)
-        // Mình sẽ cắt bỏ phần chữ thừa để lấy đúng cái giờ "08:00 AM" ghép vào chữ Tomorrow
         String timeStr = reminderController.nextReminderTime.value.replaceAll("Goal Met! Next: ", "");
 
         return Column(
@@ -332,10 +331,8 @@ class MainScene extends StatelessWidget {
 
   Widget _buildDrinkLogs(BuildContext context, WaterController controller) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    const double cupWidth = 90.0; // Rộng của 1 cốc
-    // Tính padding để cốc đầu và cốc cuối có thể cuộn ra giữa
+    const double cupWidth = 90.0;
     final double paddingHorizontal = (screenWidth / 2) - (cupWidth / 2);
-
     return Obx(() {
       if (controller.dailyLogs.isEmpty) {
         return Padding(
@@ -435,8 +432,6 @@ class MainScene extends StatelessWidget {
 
                                 // 3. Kiểm tra xem có vừa chạm mốc không
                                 if (currentTotal < goal && controller.totalWater.value >= goal) {
-                                  // QUAN TRỌNG: Đợi 0.3 giây cho cái menu xanh thụt xuống biến mất hẳn
-                                  // rồi mới bắn cái Bottom Sheet chúc mừng lên cho mượt!
                                   Future.delayed(const Duration(milliseconds: 300), () {
                                     CongratulationSuccess.show();
                                   });
