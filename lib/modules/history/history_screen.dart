@@ -76,18 +76,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return logs.where((log) {
       if (selectedTab == 0) {
         return log.time.year == focusedDate.year &&
-               log.time.month == focusedDate.month &&
-               log.time.day == focusedDate.day;
+            log.time.month == focusedDate.month &&
+            log.time.day == focusedDate.day;
       } else if (selectedTab == 1) {
         DateTime start = focusedDate.subtract(Duration(days: focusedDate.weekday - 1));
         DateTime end = start.add(const Duration(days: 7));
         DateTime s = DateTime(start.year, start.month, start.day);
         DateTime e = DateTime(end.year, end.month, end.day);
         return log.time.isAfter(s.subtract(const Duration(seconds: 1))) &&
-               log.time.isBefore(e);
+            log.time.isBefore(e);
       } else {
         return log.time.year == focusedDate.year &&
-               log.time.month == focusedDate.month;
+            log.time.month == focusedDate.month;
       }
     }).toList();
   }
@@ -127,7 +127,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildTopTabs() {
     return Container(
       margin: const EdgeInsets.only(top: 8, bottom: 16),
-      // Tạo một đường gạch dưới mờ mờ chạy dọc toàn bộ 3 tab (Unselected state)
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: const Color(0xFF00CDE0), width: 1.0),
@@ -184,12 +183,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // NÚT LÙI LẠI QUÁ KHỨ (Luôn bấm được)
           IconButton(
             onPressed: () => _updateDate(-1),
             icon: const Icon(Icons.chevron_left, color: Colors.black),
           ),
-
           Text(
             _getFormattedDate(),
             style: GoogleFonts.workSans(
@@ -198,13 +195,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
               color: const Color(0xFF0A0C11),
             ),
           ),
-
-          // NÚT TIẾN TỚI (Bị khóa nếu đang ở hiện tại)
           IconButton(
             onPressed: _canGoNext() ? () => _updateDate(1) : null,
             icon: Icon(
               Icons.chevron_right,
-              // Đổi màu xám nhạt nếu nút bị khóa
               color: _canGoNext() ? Colors.black : Colors.grey,
             ),
           ),
@@ -267,7 +261,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: LayoutBuilder(
                 builder: (context, constraints) {
                   return GestureDetector(
-                    //Ép nhận diện cảm ứng trên toàn bộ bề mặt biểu đồ
                     behavior: HitTestBehavior.opaque,
                     onTapDown: (details) {
                       _handleChartTap(details.localPosition, constraints.biggest, logs, goal);
@@ -334,14 +327,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
       });
     }
 
-    // Bán kính nhạy cảm ứng đã được tăng lên 50.0 (Dễ bấm hơn cực nhiều)
     if (closestIndex != null && minDistance < 50.0) {
       setState(() {
         selectedDotIndex = (selectedDotIndex == closestIndex) ? null : closestIndex;
       });
       HapticFeedback.selectionClick();
     } else {
-      // Bấm vô chỗ trống thì tự động đóng Tooltip
       setState(() {
         selectedDotIndex = null;
       });
@@ -364,11 +355,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  // THÊM 2 THAM SỐ OPTIONAL: logToEdit (cốc nước cần sửa) và editIndex (vị trí của nó)
-  void _showAddRecordDialog(BuildContext context, WaterController controller, {DrinkLog? logToEdit, int? editIndex}) {
-    // Nếu đang sửa: Gắn lượng nước cũ vào. Nếu thêm mới: Để trống
+  void _showAddRecordDialog(BuildContext context, WaterController controller, {DrinkLog? logToEdit}) {
     final textController = TextEditingController(text: logToEdit != null ? logToEdit.amount.toInt().toString() : "");
-    bool isValidAmount = logToEdit != null ? true : false; // Nút save sẽ khóa nếu thêm mới mà chưa nhập gì
+    bool isValidAmount = logToEdit != null ? true : false;
     final baseDate = focusedDate;
     final List<DateTime> dateRange = List.generate(11, (index) => baseDate.add(Duration(days: index - 5)));
     final List<String> daysLabels = dateRange.map((d) {
@@ -380,13 +369,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final List<String> minutes = List.generate(60, (i) => i.toString().padLeft(2, '0'));
     final List<String> periods = ["AM", "PM"];
 
-    // MẶC ĐỊNH LÀ THÊM MỚI (Lấy giờ hiện tại)
     int selectedDayIdx = 5;
     int sHour = (DateTime.now().hour % 12 == 0 ? 12 : DateTime.now().hour % 12) - 1;
     int sMin = DateTime.now().minute;
     int sPeriod = DateTime.now().hour >= 12 ? 1 : 0;
 
-    // NẾU LÀ CHẾ ĐỘ SỬA: Đưa bánh xe về đúng giờ/phút/ngày của cốc nước cũ
     if (logToEdit != null) {
       int foundIdx = dateRange.indexWhere((d) => d.year == logToEdit.time.year && d.month == logToEdit.time.month && d.day == logToEdit.time.day);
       if (foundIdx != -1) selectedDayIdx = foundIdx;
@@ -400,6 +387,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final hourScrollController = FixedExtentScrollController(initialItem: sHour);
     final minScrollController = FixedExtentScrollController(initialItem: sMin);
     final periodScrollController = FixedExtentScrollController(initialItem: sPeriod);
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -485,17 +473,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             if (sPeriod == 0 && h == 12) h = 0;
                             final drinkTime = DateTime(date.year, date.month, date.day, h, sMin);
 
-                            // === LOGIC XỬ LÝ LƯU: KIỂM TRA XEM LÀ THÊM HAY SỬA ===
-                            if (logToEdit != null && editIndex != null) {
-                              // Chế độ Sửa: Trừ đi lượng nước cũ, cộng lượng nước mới vào tổng
-                              controller.totalWater.value += (amount - logToEdit.amount);
-                              // Ghi đè vào cốc nước cũ trong mảng
-                              controller.dailyLogs[editIndex] = DrinkLog(amount: amount, time: drinkTime);
+                            // === LOGIC XỬ LÝ LƯU ĐÃ FIX ===
+                            final newLog = DrinkLog(amount: amount, time: drinkTime);
+
+                            if (logToEdit != null) {
+                              // Chế độ Sửa
+                              int hIndex = controller.historyLogs.indexOf(logToEdit);
+                              if (hIndex != -1) controller.historyLogs[hIndex] = newLog;
+
+                              int dIndex = controller.dailyLogs.indexOf(logToEdit);
+                              if (dIndex != -1) {
+                                controller.dailyLogs[dIndex] = newLog;
+                                controller.totalWater.value += (amount - logToEdit.amount);
+                              }
                             } else {
-                              // Chế độ Thêm Mới:
-                              controller.dailyLogs.add(DrinkLog(amount: amount, time: drinkTime));
-                              controller.totalWater.value += amount;
+                              // Chế độ Thêm Mới
+                              controller.historyLogs.add(newLog);
+
+                              final now = DateTime.now();
+                              if (drinkTime.year == now.year && drinkTime.month == now.month && drinkTime.day == now.day) {
+                                controller.dailyLogs.add(newLog);
+                                controller.totalWater.value += amount;
+                              }
                             }
+
+                            // Báo cho UI biết để cập nhật biểu đồ ngay lập tức
+                            controller.historyLogs.refresh();
+                            controller.dailyLogs.refresh();
 
                             Navigator.pop(context);
                           }
@@ -520,7 +524,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildWheelColumn(List<String> items, int selectedIndex, FixedExtentScrollController scrollController, ValueChanged<int> onChanged, {bool isLooping = false}) {
     return Expanded(
       child: ListWheelScrollView.useDelegate(
-        controller: scrollController, // Gắn Controller để bánh xe mở ra đúng vị trí
+        controller: scrollController,
         itemExtent: 35,
         physics: const FixedExtentScrollPhysics(),
         onSelectedItemChanged: onChanged,
@@ -538,7 +542,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildWheelItem(String text, bool isSelected) {
     return Center(
       child: AnimatedDefaultTextStyle(
-        duration: const Duration(milliseconds: 150), // Hiệu ứng chuyển font mượt khi vuốt
+        duration: const Duration(milliseconds: 150),
         style: GoogleFonts.workSans(
           fontSize: isSelected ? 18 : 15,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -603,17 +607,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                 ),
                 InkWell(
-                  onTap: () => controller.removeLog(controller.dailyLogs.indexOf(log)),
+                  onTap: () {
+                    // Xóa
+                    controller.historyLogs.remove(log);
+                    if (controller.dailyLogs.contains(log)) {
+                      controller.dailyLogs.remove(log);
+                      controller.totalWater.value -= log.amount;
+                    }
+                    // Báo cho UI cập nhật
+                    controller.historyLogs.refresh();
+                    controller.dailyLogs.refresh();
+                  },
                   child: const Icon(Icons.delete_outline, size: 20, color: Colors.grey),
                 ),
                 const SizedBox(width: 16),
                 InkWell(
-                  // KHI BẤM NÚT SỬA: Phải báo cho Dialog biết là tôi đang sửa cái cốc nước nào
                   onTap: () => _showAddRecordDialog(
-                      context,
-                      controller,
-                      logToEdit: log, // Truyền data cũ vào
-                      editIndex: controller.dailyLogs.indexOf(log) // Truyền vị trí của nó
+                    context,
+                    controller,
+                    logToEdit: log,
                   ),
                   child: const Icon(Icons.edit_outlined, size: 20, color: Colors.grey),
                 ),
@@ -630,7 +642,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       height: 85,
       color: const Color(0xFF00B9CA),
       child: Obx(
-        () => Row(
+            () => Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _NavItem(
@@ -694,7 +706,6 @@ class FlowChartPainter extends CustomPainter {
     canvas.translate(leftMargin, 0);
 
     final Paint gridPaint = Paint()..color = Colors.grey..strokeWidth = 1;
-
     final List<double> yTicks = selectedTab == 0 ? [0, 612, 1225, 1837, 2450] : [0, 0.45, 0.9, 1.36, 1.81];
     for (var tick in yTicks) {
       double y = h - (tick / maxVal * h);
@@ -708,12 +719,9 @@ class FlowChartPainter extends CustomPainter {
     _drawDashedLine(canvas, Offset(0, goalY), Offset(w, goalY), goalPaint);
 
     if (logs.isNotEmpty) {
-      // TÍNH xStep ĐỘNG THEO SỐ NGÀY
       final double xStep = w / (selectedTab == 0 ? 24 : (selectedTab == 1 ? 6 : (daysInMonth - 1)));
-
       final Paint dotPaint = Paint()..color = const Color(0xFF00CDE0)..style = ui.PaintingStyle.fill;
       final Paint dotOutline = Paint()..color = Colors.white..strokeWidth = 2.5..style = ui.PaintingStyle.stroke;
-
       if (selectedTab == 0) {
         List<DrinkLog> sortedLogs = List.from(logs)..sort((a, b) => a.time.compareTo(b.time));
         List<Offset> points = [];
@@ -779,7 +787,6 @@ class FlowChartPainter extends CustomPainter {
     } else if (selectedTab == 1) {
       xLabels = ["S", "M", "T", "W", "T", "F", "S"];
     } else {
-      // Tháng có bao nhiêu ngày thì in nhãn cuối cùng bấy nhiêu
       xLabels = ["1", "6", "11", "16", "21", "26", daysInMonth.toString()];
     }
 
@@ -790,7 +797,7 @@ class FlowChartPainter extends CustomPainter {
       } else if (selectedTab == 1) {
         x = i * (w / 6);
       } else {
-        x = (int.parse(xLabels[i]) - 1) * (w / (daysInMonth - 1)); // Lưới tháng cũng chia theo số ngày
+        x = (int.parse(xLabels[i]) - 1) * (w / (daysInMonth - 1));
       }
       final textPainter = TextPainter(text: TextSpan(text: xLabels[i], style: GoogleFonts.workSans(color: const Color(0xFF003D43), fontSize: 12, fontWeight: FontWeight.w500)), textDirection: ui.TextDirection.ltr)..layout();
       textPainter.paint(canvas, Offset(x - (textPainter.width / 2), h + 12));
@@ -839,7 +846,7 @@ class _NavItem extends StatelessWidget {
     this.isSelected = false,
     this.onTap,
   });
-    @override
+  @override
   Widget build(BuildContext context) {
     return Expanded(
       child: InkWell(

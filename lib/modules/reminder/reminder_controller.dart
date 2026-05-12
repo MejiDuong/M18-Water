@@ -15,7 +15,6 @@ class StandardReminder {
   StandardReminder({required this.name, required String time, bool isEnabled = true})
       : time = time.obs,
         isEnabled = isEnabled.obs;
-
   Map<String, dynamic> toJson() => {'name': name, 'time': time.value, 'isEnabled': isEnabled.value};
   factory StandardReminder.fromJson(Map<String, dynamic> json) => StandardReminder(name: json['name'], time: json['time'], isEnabled: json['isEnabled']);
 }
@@ -65,7 +64,7 @@ class ReminderController extends GetxController {
       final waterCtrl = Get.find<WaterController>();
       return waterCtrl.totalWater.value >= waterCtrl.goalWater.value;
     } catch (e) {
-      return false; // Nếu chưa load được WaterController thì coi như chưa đạt
+      return false;
     }
   }
 
@@ -157,7 +156,7 @@ class ReminderController extends GetxController {
     return allActiveTimes.toSet().toList();
   }
 
-  // NẠP BÁO THỨC VÀO HỆ ĐIỀU HÀNH (ĐÃ THÊM LOGIC SKIP GOAL)
+  // NẠP BÁO THỨC VÀO HỆ ĐIỀU HÀNH
   Future<void> _updateScheduledNotifications() async {
     await NotificationService().cancelAll();
     if (!isMasterOn.value) return;
@@ -185,7 +184,7 @@ class ReminderController extends GetxController {
       );
       idCounter++;
     }
-    debugPrint("===> ĐÃ LÊN LỊCH ${activeTimes.length} BÁO THỨC <===");
+    debugPrint("===> ĐÃ LÊN LỊCH BÁO THỨC <===");
   }
 
   // TỰ ĐỘNG TẠO CHUỖI GIỜ INTERVAL HIỂN THỊ UI

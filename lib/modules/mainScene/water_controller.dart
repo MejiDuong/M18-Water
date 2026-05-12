@@ -49,6 +49,7 @@ class WaterController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    box.erase();
     _loadData();
   }
 
@@ -142,5 +143,38 @@ class WaterController extends GetxController {
 
   void changeTab(int index) {
     currentTab.value = index;
+  }
+  // ==========================================
+  // LOGIC TÍNH TOÁN CHO MÀN PROFILE
+  // ==========================================
+
+  // Tính tổng số Lít nước đã uống từ cổ chí kim
+  double get totalDrinkingInLiters {
+    double sumMl = 0;
+    for (var log in historyLogs) {
+      sumMl += log.amount;
+    }
+    return sumMl / 1000.0; // Đổi từ ml sang Lít
+  }
+
+  // Đếm số ngày đạt mục tiêu (Achieved Days)
+  int get totalAchievedDays {
+    Map<String, double> dailyTotals = {};
+
+    // Gom nhóm tổng lượng nước theo từng ngày
+    for (var log in historyLogs) {
+      String dateKey = "${log.time.year}-${log.time.month}-${log.time.day}";
+      dailyTotals[dateKey] = (dailyTotals[dateKey] ?? 0) + log.amount;
+    }
+
+    // Đếm xem có bao nhiêu ngày vượt qua goalWater
+    int achievedCount = 0;
+    dailyTotals.forEach((date, total) {
+      if (total >= goalWater.value) {
+        achievedCount++;
+      }
+    });
+
+    return achievedCount;
   }
 }

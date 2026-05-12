@@ -24,7 +24,14 @@ class ReminderScreen extends StatelessWidget {
         titleSpacing: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: mainText, size: 20),
-          onPressed: () => Get.back(),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+            else {
+              Get.offAllNamed('/mainScene');
+            }
+          },
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,11 +556,9 @@ class ReminderScreen extends StatelessWidget {
     int tempHour = int.parse(hm[0]);
     int tempMin = int.parse(hm[1]);
     String tempAmPm = parts.length > 1 ? parts[1] : "AM";
-
     final List<String> hoursList = List.generate(12, (index) => (index + 1).toString().padLeft(2, '0'));
     final List<String> minutesList = List.generate(60, (index) => index.toString().padLeft(2, '0'));
     final List<String> amPmList = ["AM", "PM"];
-
     int tempHourIndex = tempHour - 1;
     int tempMinIndex = tempMin;
     int tempAmPmIndex = tempAmPm == "AM" ? 0 : 1;
@@ -689,7 +694,7 @@ class ReminderScreen extends StatelessWidget {
     );
   }
 
-  // GIAO DIỆN BOTTOM SHEET TIMER (CÓ BẮT LỖI)
+  // GIAO DIỆN BOTTOM SHEET TIMER (ĐÃ FIX CHẮC CHẮN ĐÓNG BẢNG & HIỆN LỖI)
   void _showTimerBottomSheet(BuildContext context, ReminderController controller, Color primaryCyan, {CustomTime? existingItem, bool isWeekend = false}) {
     String initialTime = existingItem != null ? existingItem.time.value : "08:00 AM";
     List<String> parts = initialTime.split(' ');
@@ -697,11 +702,9 @@ class ReminderScreen extends StatelessWidget {
     int tempHour = int.parse(hm[0]);
     int tempMin = int.parse(hm[1]);
     String tempAmPm = parts.length > 1 ? parts[1] : "AM";
-
     final List<String> hoursList = List.generate(12, (index) => (index + 1).toString().padLeft(2, '0'));
     final List<String> minutesList = List.generate(60, (index) => index.toString().padLeft(2, '0'));
     final List<String> amPmList = ["AM", "PM"];
-
     int tempHourIndex = tempHour - 1;
     int tempMinIndex = tempMin;
     int tempAmPmIndex = tempAmPm == "AM" ? 0 : 1;
@@ -726,23 +729,27 @@ class ReminderScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text("Timer", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
-                        // NÚT THÙNG RÁC (CÓ LOGIC CHẶN XÓA HẾT)
+                        // NÚT THÙNG RÁC
                         InkWell(
                           onTap: () {
                             if (existingItem != null) {
                               var targetList = isWeekend ? controller.weekendCustomTimes : controller.customTimes;
 
-                              // [MỚI] CHẶN NẾU CHỈ CÒN ĐÚNG 1 CÁI BÁO THỨC
                               if (targetList.length <= 1) {
-                                Get.back();
-                                _showCustomError("You cannot delete all alarms. Please add more.");
-                                return; // Dừng lại, không xóa
+                                Get.back(); // Ép GetX đóng bảng
+                                Future.delayed(const Duration(milliseconds: 350), () {
+                                  _showCustomError("You cannot delete all alarms. Please add more.");
+                                });
+                                return;
                               }
 
+                              // Xóa hợp lệ
                               targetList.remove(existingItem);
-                              controller.refreshData();
+                              Get.back(); // Ép GetX đóng bảng
+                              try { controller.refreshData(); } catch (e) {} // Bọc try-catch đề phòng lỗi ngầm
+                            } else {
+                              Get.back();
                             }
-                            Get.back();
                           },
                           child: Container(
                             padding: const EdgeInsets.all(8),
@@ -756,7 +763,6 @@ class ReminderScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 24),
-
                     SizedBox(
                       height: 150,
                       child: Stack(
@@ -821,34 +827,41 @@ class ReminderScreen extends StatelessWidget {
                     const SizedBox(height: 32),
                     Row(
                       children: [
+                        // NÚT CANCEL
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => Get.back(),
+                            onPressed: () => Get.back(), // Đóng bảng
                             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), side: BorderSide(color: primaryCyan, width: 1.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
                             child: Text("Cancel", style: TextStyle(color: primaryCyan, fontSize: 16, fontWeight: FontWeight.bold)),
                           ),
                         ),
                         const SizedBox(width: 16),
-                        // NÚT SAVE (CÓ LOGIC CHẶN TRÙNG LẶP)
+                        // NÚT SAVE
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
                               String finalTime = "${hoursList[tempHourIndex]}:${minutesList[tempMinIndex]} ${amPmList[tempAmPmIndex]}";
                               var targetList = isWeekend ? controller.weekendCustomTimes : controller.customTimes;
+
                               bool isDuplicate = targetList.any((e) => e.time.value == finalTime && e != existingItem);
+
                               if (isDuplicate) {
-                                Get.back();
-                                _showCustomError("This alarm is already set.");
-                                return; // Dừng lại, không cho save
+                                Get.back(); // Ép GetX đóng bảng
+                                Future.delayed(const Duration(milliseconds: 350), () {
+                                  _showCustomError("This alarm is already set.");
+                                });
+                                return;
                               }
+
+                              // Lưu hợp lệ
                               if (existingItem != null) {
                                 existingItem.time.value = finalTime;
                               } else {
-                                var newItem = CustomTime(time: finalTime, isEnabled: true);
-                                targetList.add(newItem);
+                                targetList.add(CustomTime(time: finalTime, isEnabled: true));
                               }
-                              controller.refreshData();
-                              Get.back();
+
+                              Get.back(); // Ép GetX đóng bảng
+                              try { controller.refreshData(); } catch (e) {} // Bọc try-catch đề phòng lỗi ngầm
                             },
                             style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), backgroundColor: primaryCyan, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
                             child: const Text("Save", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -866,32 +879,35 @@ class ReminderScreen extends StatelessWidget {
     );
   }
 
+  // THÔNG BÁO LỖI (DÙNG GET_SNACK_BAR NGUYÊN THỦY CỦA GETX)
   void _showCustomError(String message) {
-    if (Get.isSnackbarOpen) {
-      Get.closeAllSnackbars();
-    }
-    Get.rawSnackbar(
-      messageText: Row(
-        children: [
-          const Icon(Icons.cancel, color: Color(0xFFF44336), size: 24), // Icon tròn đỏ có dấu x
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w500),
+    Get.showSnackbar(
+      GetSnackBar(
+        messageText: Row(
+          children: [
+            const Icon(Icons.cancel, color: Color(0xFFF44336), size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w500),
+              ),
             ),
-          ),
+          ],
+        ),
+        backgroundColor: Colors.white,
+        borderRadius: 30,
+        margin: const EdgeInsets.only(top: 80, left: 16, right: 16), // Hiện chuẩn ngay dưới AppBar
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        snackPosition: SnackPosition.TOP,
+        borderColor: const Color(0xFFF44336),
+        borderWidth: 1.5,
+        boxShadows: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))
         ],
+        duration: const Duration(seconds: 3),
+        animationDuration: const Duration(milliseconds: 300),
       ),
-      backgroundColor: Colors.white,
-      borderRadius: 30,
-      margin: const EdgeInsets.only(top: 16, left: 16, right: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      snackPosition: SnackPosition.TOP,
-      borderColor: const Color(0xFFF44336),
-      borderWidth: 1.5,
-      boxShadows: [const BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
-      duration: const Duration(seconds: 3),
     );
   }
 }

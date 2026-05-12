@@ -11,7 +11,7 @@ class ReminderModeBottomSheet {
       Container(
         padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
-          color: Colors.white, // Nền trắng chuẩn Light Theme
+          color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
@@ -32,7 +32,6 @@ class ReminderModeBottomSheet {
               ],
             ),
             const SizedBox(height: 24),
-
             // --- CÁC LỰA CHỌN ---
             _buildModeOption(0, "Standard", "Based on your sleep and meals", controller, primaryCyan),
             const SizedBox(height: 20),
@@ -46,7 +45,9 @@ class ReminderModeBottomSheet {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () => controller.saveMode(),
+                onPressed: () {
+                  controller.saveMode();
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryCyan,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -60,7 +61,7 @@ class ReminderModeBottomSheet {
         ),
       ),
       isScrollControlled: true,
-      backgroundColor: Colors.transparent, // Để lộ viền bo góc tròn
+      backgroundColor: Colors.transparent,
     );
   }
 

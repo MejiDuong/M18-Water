@@ -6,7 +6,7 @@ import 'package:untitled/modules/authen/sign_up_scene.dart';
 import 'package:untitled/modules/createNewItem/screate_new_note_scene.dart';
 import 'package:untitled/modules/mainScene/main_scene.dart';
 import 'package:untitled/modules/notePen/note_pen_scene.dart';
-import 'package:untitled/modules/profile/profile_scene.dart';
+import 'package:untitled/modules/profile/profile_screen.dart';
 import 'package:untitled/modules/record/record_player_scene.dart';
 import 'package:untitled/modules/reminder/reminder_screen.dart';
 import 'package:untitled/modules/top/top_scene.dart';
@@ -62,7 +62,7 @@ class Pages {
     GetPage(
       name: Routes.profile,
       binding: ProfileBinding(),
-      page: () => ProfileScene(),
+      page: () => const ProfileScreen(),
     ),
 
     GetPage(

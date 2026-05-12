@@ -12,7 +12,6 @@ import '../../routes/routes.dart';
 class MainBinding extends Bindings {
   @override
   void dependencies() {
-    // Get.lazyPut<MainController>(() => MainController());
     Get.lazyPut<WaterController>(() => WaterController());
     Get.put(ReminderController());
   }
@@ -30,7 +29,6 @@ class MainScene extends StatelessWidget {
       backgroundColor: const Color(0xFFE6FAFC),
       body: Stack(
         children: [
-          // 1. Water Wave Background
           Obx(
             () => WaterWave(
               progress: controller.percentage,
@@ -39,10 +37,7 @@ class MainScene extends StatelessWidget {
             ),
           ),
 
-          // 2. Static Percentage Markers
           _buildStaticMarkers(),
-
-          // 4. Main Content
           SafeArea(
             child: Column(
               children: [
@@ -59,10 +54,7 @@ class MainScene extends StatelessWidget {
               ],
             ),
           ),
-          // 3. Current Progress Tag
           Obx(() => _buildCurrentProgressTag(context, controller.percentage)),
-
-          // 5. Bottom Nav
           _buildBottomNav(controller),
         ],
       ),
@@ -142,16 +134,19 @@ class MainScene extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
+          IconButton(
+            onPressed: () {
+              Get.toNamed('/profile');
+            },
+            icon: const Icon(
               Icons.settings_outlined,
               size: 22,
               color: Colors.black45,
+            ),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white, // Giữ nguyên nền trắng
+              padding: const EdgeInsets.all(8), // Giữ nguyên khoảng cách
+              shape: const CircleBorder(), // Bo tròn hoàn hảo như BoxShape.circle
             ),
           ),
         ],
@@ -422,15 +417,10 @@ class MainScene extends StatelessWidget {
                           child: InkWell(
                             onTap: () {
                               if (hasSelection) {
-                                // 1. Chụp lại mức nước hiện tại
                                 double currentTotal = controller.totalWater.value;
                                 double goal = controller.goalWater.value;
-
-                                // 2. Cộng nước và tắt chọn (để menu xanh thụt xuống)
                                 controller.addWater(selectedAmount);
                                 controller.selectedLogIndex.value = -1;
-
-                                // 3. Kiểm tra xem có vừa chạm mốc không
                                 if (currentTotal < goal && controller.totalWater.value >= goal) {
                                   Future.delayed(const Duration(milliseconds: 300), () {
                                     CongratulationSuccess.show();
@@ -443,7 +433,7 @@ class MainScene extends StatelessWidget {
                               height: 48,
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF4DB64D), // Nền xanh lá
+                                color: const Color(0xFF4DB64D),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
@@ -472,37 +462,29 @@ class MainScene extends StatelessWidget {
                 ),
               ),
             ),
-            // 2. TẦNG CỐC NƯỚC (Giờ sẽ build theo danh sách đã gộp - groupedLogs)
             SizedBox(
               height: 100,
               child: ListView.builder(
                 controller: controller.scrollController,
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
-                itemCount: groupedLogs.length, // Dùng số lượng nhóm
+                itemCount: groupedLogs.length,
                 clipBehavior: Clip.none,
                 itemBuilder: (context, index) {
-                  // Lấy dữ liệu của nhóm hiện tại
                   final group = groupedLogs[index];
                   final amount = group['amount'] as double;
                   final indices = group['indices'] as List<int>;
-                  final count = indices.length; // Đếm số lượng cốc trong nhóm này
-
-                  // Sáng lên nếu 1 trong các cốc của nhóm này đang được chọn
+                  final count = indices.length;
                   final isSelected = indices.contains(controller.selectedLogIndex.value);
-
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 3),
                     child: Center(
-                      // THÊM STACK Ở ĐÂY ĐỂ VẼ CỤC MÀU VÀNG NỔI LÊN TRÊN
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          // THÂN CỐC
                           Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              // Khi bấm, ta chọn cái index gốc cuối cùng (mới nhất) trong nhóm
                               onTap: () => controller.selectLog(indices.last, screenWidth),
                               borderRadius: BorderRadius.circular(16),
                               child: Ink(
@@ -538,17 +520,16 @@ class MainScene extends StatelessWidget {
                               ),
                             ),
                           ),
-                          // CỤC BADGE MÀU VÀNG (Chỉ hiện khi đếm > 1)
                           if (count > 1)
                             Positioned(
-                              top: -8, // Kéo lên trên viền
-                              right: -8, // Kéo lấn ra ngoài viền
+                              top: -8,
+                              right: -8,
                               child: Container(
                                 width: 26,
                                 height: 26,
                                 alignment: Alignment.center,
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFFFFB300), // Màu vàng cam giống ảnh
+                                  color: Color(0xFFFFB300),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Text(
@@ -662,13 +643,10 @@ class MainScene extends StatelessWidget {
                   onPressed: () {
                     final amount = double.tryParse(textController.text);
                     if (amount != null && amount > 0) {
-                      // 1. Lưu lại thông tin TRƯỚC KHI uống
                       double currentTotal = controller.totalWater.value;
                       double goal = controller.goalWater.value;
                       int oldLogCount = controller.dailyLogs.length;
-                      // 2. Bơm nước vào người
                       controller.addWater(amount);
-                      // 3. LOGIC XUẤT HIỆN Ở ĐÂY:
                       // Ưu tiên 1: Uống ly này xong là đạt target 2000ml -> Cúp vàng
                       if (currentTotal < goal && controller.totalWater.value >= goal) {
                         Future.delayed(const Duration(milliseconds: 300), () => CongratulationSuccess.show());
@@ -677,8 +655,6 @@ class MainScene extends StatelessWidget {
                       else if (oldLogCount == 0) {
                         Future.delayed(const Duration(milliseconds: 300), () => FirstDrinkBottomSheet.show());
                       }
-
-                      // Đóng cái bảng nhập số ml lại
                       Navigator.pop(context);
                     }
                   },
@@ -758,7 +734,6 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback? onTap;
-
   const _NavItem({
     required this.svgPath,
     required this.label,
@@ -778,7 +753,6 @@ class _NavItem extends StatelessWidget {
             SvgPicture.asset(
               svgPath,
               colorFilter: ColorFilter.mode(
-                // Sáng trắng nếu chọn, trắng mờ nếu chưa chọn
                 isSelected ? Colors.white : Colors.white54,
                 BlendMode.srcIn,
               ),
@@ -789,7 +763,6 @@ class _NavItem extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.workSans(
-                // Sáng trắng nếu chọn, trắng mờ nếu chưa chọn
                 color: isSelected ? Colors.white : Colors.white54,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
